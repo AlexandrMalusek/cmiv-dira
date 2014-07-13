@@ -1,0 +1,55 @@
+#ifndef NPROJ
+#define NPROJ 560              // default projection number
+#define NPHI 512
+#endif
+
+#define RFOC  595mm            // radius of focus circle
+#define RDET  500mm            // radius of detector circle
+
+#define FAN   38.4             // fan beam angle
+#define DZ    0.7884mm         // detector element width
+
+#include <materials>
+#include "drasim_materials.txt"
+
+Text "Calculation of projections for a fanbeam sinogram."
+
+Commands
+{   
+    no_control_print
+    plot_spectrum
+    no_noise
+}
+
+// Beam filter, thicknesses are in cm
+Filter {ALUMINIUM d=0.3}{TITANIUM d=0.06}{GRAPHITE d=0.1}{TIN d=0.04 }
+
+// Include phantom.
+#include "drasim_phantom.txt"
+
+$for i 1 NPROJ
+Beam
+{
+    start(RFOC*cos((i-1)*228/NPROJ),
+          RFOC*sin((i-1)*228/NPROJ),0)
+    anode = W                  // anode material
+    kV = 140                   // tube voltage in kV
+    mAs = 1.7314               // tube load in mAs
+}
+
+Detector
+{
+    [ Cylindrical_z: center(-RDET*cos((i-1)*228/NPROJ),
+                            -RDET*sin((i-1)*228/NPROJ),0) ]
+    cx=RFOC*cos((i-1)*228/NPROJ)  cy=RFOC*sin((i-1)*228/NPROJ)
+    phi1=-FAN/2  phi2=FAN/2  nphi=NPHI          // NPHI channels
+    z1=-DZ/2     z2=DZ/2     nz=1 n_phi_sub=10  // subdivision by 10
+    
+    s_phi(-0.1,0,0.1) s_z(-100,100)
+    p_phi_z(0,0.9,0, 0,0.9,0)  // phi collimator, no dependency on s_z
+
+    ideal                      // ideal detector
+    beam = i-1                 // receives rays from beam i-1
+}
+
+$forend
