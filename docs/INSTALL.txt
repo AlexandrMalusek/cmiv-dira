@@ -1,0 +1,24 @@
+1. Clone the repository:
+
+  git clone https://code.google.com/p/cmiv-dira/
+
+2. Switch to the "develop" branch:
+
+  cd cmiv-dira
+  git checkout develop
+
+3. If needed, pull the latest changes:
+
+  git pull
+
+Now you have the latest version of distribution files. Start Matlab.
+
+4. Mex files in Matlab:
+
+  >> cd functions/
+  >> mex sinogramJc.c
+
+5. Test examples:
+
+  >> cd ../examples/slice113/reconstruction/
+  >> write_CRV
