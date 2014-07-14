@@ -85,7 +85,7 @@ drawnow();
 %% Inital Tissue segmentation
 % 
 disp('Classifying tissues...')
-[tissue2 tissue3] = feval(tissueClass, phm1, phm1);
+[tissue2 tissue3] = feval(tissueClass, recLowSet{1}, recHighSet{1});
 
 % Tissue decomposition
 disp('Decomposing tissues...')
@@ -252,7 +252,7 @@ for iter = 1:numbiter
   % -------------------
   
   disp('Classifying tissues...')
-  [tissue2 tissue3] = feval(tissueClass);
+  [tissue2 tissue3] = feval(tissueClass, recLowSet{iter+1}, recHighSet{iter+1});
   
   % Tissue decomposition
   % ---------------------------
