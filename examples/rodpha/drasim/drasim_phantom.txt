@@ -1,0 +1,8 @@
+Phantom "Rod phantom"
+
+{ "WATER" [Ellipt_Cyl: x=0.0mm    y=0.0mm    z=0mm dx=180.0mm dy=180.0mm l=100mm axis(0,0,1) a_x(1,0,0)] formula=H2O rho=1.000 }
+{ "ALUMI" [Ellipt_Cyl: x=100.0mm  y=0.0mm    z=0mm dx=40.0mm  dy=40.0mm  l=100mm axis(0,0,1) a_x(1,0,0)] formula=Al  rho=2.691 }
+{ "BONE"  [Ellipt_Cyl: x=-100.0mm y=0.0mm    z=0mm dx=40.0mm  dy=40.0mm  l=100mm axis(0,0,1) a_x(1,0,0)] BONE }
+{ "LIPID" [Ellipt_Cyl: x=0.0mm    y=100.0mm  z=0mm dx=40.0mm  dy=40.0mm  l=100mm axis(0,0,1) a_x(1,0,0)] LIPID }
+{ "PROTE" [Ellipt_Cyl: x=0.0mm    y=-100.0mm z=0mm dx=40.0mm  dy=40.0mm  l=100mm axis(0,0,1) a_x(1,0,0)] PROTEIN }
+
