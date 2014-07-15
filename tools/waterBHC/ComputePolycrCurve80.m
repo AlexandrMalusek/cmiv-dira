@@ -2,6 +2,7 @@
 % Compute polychromatic and monocromatic curves for water beamhardening
 % (Based on a program by Arif Muhammad.)
 % Maria 2012-02-14
+% Updated by Maria 2013-10-25
 %======================================================================
 
 % Read spectra and water attenuation data and save to matrix
@@ -33,7 +34,7 @@ end
 
 % Plot spectrum and water attenuation
 %------------------------------------
-figure(1)
+figure(2)
 subplot(1,3,1), plot(F(:,1),100*Wdens*F(:,3)) 
 title('attenuation coefficient')
 xlabel('E [keV]'); ylabel('\mu(E) [1/m]');
@@ -63,7 +64,7 @@ I0 = sum(IkV)/2;
 % Loop over different distances (1-45cm) and 
 % compute intensity at detector
 %-------------------------------------------
-for dist = 1:45;
+for dist = 1:100;
   for k = 2:79;
     IkV(k) = E(k) * N(E(k)) * exp(-mukV(E(k))*dist) * (E(k+1) - E(k-1));
   end
@@ -81,7 +82,7 @@ muEff = sum(mu_E)/(2*I0);
     
 % Compute and plot polychromatic and monocromatic curves
 %-------------------------------------------------------
-distax = 1:45;
+distax = 1:100;
 monocr = muEff * distax;
 polycr = -log(I/I0);
 subplot(1,3,3); plot(distax, polycr, '*r', distax, monocr, '*b');

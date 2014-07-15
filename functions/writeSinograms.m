@@ -76,7 +76,7 @@ for i = 1:2
   for  n = 1:M1
     for  m = 1:N1
       value = rebsim(m,n);
-      for k = 1:44
+      for k = 1:99
         if (value < polycr(k) && k==1)
           dist(m,n) = value / polycr(1); 
           break;    
