@@ -1,10 +1,11 @@
 %% Tissue classification
 %
-function [tissue2, tissue3] = myTissueClassification(~,~)
+function [tissue2, tissue3] = myTissueClassification(iter, smd, pmd)
   %
   % Input:
-  % lac1:     matrix of LACs at effective energy E1
-  % lac2:     matrix of LACs at effective energy E2
+  % iter:    iteration number
+  % smd:     scanner model data 
+  % pmd:     phantom model data
   %
   % Output:
   % tissue2:  masks defining tissues decomposed using MD2

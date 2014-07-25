@@ -11,24 +11,34 @@ sinogramsBhFileName = 'sinogramsBH.mat';
 spectraFileName = 'spectra.mat';
 prostateMaskFileName = 'prostateMask.mat';
 
-%% Scanner parameters
-%
-% X-ray tube voltages in kV
-eL = 80;       % low
-eH = 140;      % high
+spectra =  load(spectraFileName);
 
-% Photon efective energies in keV
-eEL = 50.0;    % low
-eEH = 88.5;    % high
+%% Scanner model data
+smd = ScannerModelData;
+smd.eL = 80;            % low x-ray tube voltage in kV
+smd.eH = 140;           % high x-ray tube voltage in kV
+smd.eEL = 50.0;         % low effective energy in keV
+smd.eEH = 88.5;         % high effective energy in keV
+smd.ELow = spectra.currSpectLow(1:75, 1);
+smd.NLow = spectra.currSpectLow(1:75, 2);
+smd.EHigh = spectra.currSpectHigh(1:135, 1);
+smd.NHigh = spectra.currSpectHigh(1:135, 2);
+smd.L = 0.595;          % distance source - rot. center in m
+smd.alpha = 38.4;       % fanbeam angle in deg
+smd.N1 = 511;           % number of detector elements after rebinning
+smd.dt1 = 0.402298392584693/(smd.N1+1); % detector element size
+smd.interpolation = 2;  % Joseph projection generation
 
-% CT scanner geometry
-L = 0.595;                       % distance source - rot. center in m
-alpha = 38.4;                    % fanbeam angle in deg
-N1 = 511;                        % number of detector elements after rebinning
-dt1 = 0.402298392584693/(N1+1);  % detector element size = pixel distance
+sinograms = load(sinogramsFileName);
+sinogramsBH = load(sinogramsBhFileName);
 
-% Joseph projection generation
-interpolation = 2;
+% Phantom model data
+pmd = PhantomModelData;
+pmd.projLow = sinograms.projLow;
+pmd.projHigh = sinograms.projHigh;
+pmd.projLowBH = sinogramsBH.projLowBH;
+pmd.projHighBH = sinogramsBH.projHighBH;
+
 
 %% Elemental material composition (number of atoms per molecule) and
 % mass density (in g/cm^3).
@@ -62,63 +72,63 @@ waterStr = 'H0.666667O0.333333';
 waterDens = 1.000;
 
 % Tissue 1
-Dens2{1}(1) = boneDens;
-Cross2{1}(:, 1) = [CalculateMAC(boneStr, eEL),...
-  CalculateMAC(boneStr, eEH)];
-Att2{1}(:, 1) = Dens2{1}(1)*Cross2{1}(:, 1);
-mu2Low{1}(:, 1) = CalculateMACs(boneStr, 1:eL);
-mu2High{1}(:, 1) = CalculateMACs(boneStr, 1:eH);
+pmd.Dens2{1}(1) = boneDens;
+Cross2{1}(:, 1) = [CalculateMAC(boneStr, smd.eEL),...
+  CalculateMAC(boneStr, smd.eEH)];
+pmd.Att2{1}(:, 1) = pmd.Dens2{1}(1)*Cross2{1}(:, 1);
+mu2Low{1}(:, 1) = CalculateMACs(boneStr, 1:smd.eL);
+mu2High{1}(:, 1) = CalculateMACs(boneStr, 1:smd.eH);
 
-Dens2{1}(2) = marrowMixDens;
-Cross2{1}(:, 2) = [CalculateMAC(marrowMixStr, eEL),...
-  CalculateMAC(marrowMixStr, eEH)];
-Att2{1}(:, 2) = Dens2{1}(2)*Cross2{1}(:, 2);
-mu2Low{1}(:, 2) = CalculateMACs(marrowMixStr, 1:eL);
-mu2High{1}(:, 2) = CalculateMACs(marrowMixStr, 1:eH);
+pmd.Dens2{1}(2) = marrowMixDens;
+Cross2{1}(:, 2) = [CalculateMAC(marrowMixStr, smd.eEL),...
+  CalculateMAC(marrowMixStr, smd.eEH)];
+pmd.Att2{1}(:, 2) = pmd.Dens2{1}(2)*Cross2{1}(:, 2);
+mu2Low{1}(:, 2) = CalculateMACs(marrowMixStr, 1:smd.eL);
+mu2High{1}(:, 2) = CalculateMACs(marrowMixStr, 1:smd.eH);
 
 % Tissue 2
-Dens3{1}(1) = lipidDens;
-Att3{1}(:, 1) = [Dens3{1}(1)*CalculateMAC(lipidStr, eEL),...
-  Dens3{1}(1)*CalculateMAC(lipidStr, eEH)];
-mu3Low{1}(:, 1) = Dens3{1}(1)*CalculateMACs(lipidStr, 1:eL);
-mu3High{1}(:, 1) = Dens3{1}(1)*CalculateMACs(lipidStr, 1:eH);
+pmd.Dens3{1}(1) = lipidDens;
+pmd.Att3{1}(:, 1) = [pmd.Dens3{1}(1)*CalculateMAC(lipidStr, smd.eEL),...
+  pmd.Dens3{1}(1)*CalculateMAC(lipidStr, smd.eEH)];
+mu3Low{1}(:, 1) = pmd.Dens3{1}(1)*CalculateMACs(lipidStr, 1:smd.eL);
+mu3High{1}(:, 1) = pmd.Dens3{1}(1)*CalculateMACs(lipidStr, 1:smd.eH);
 
-Dens3{1}(2) = proteineDens;
-Att3{1}(:, 2) = [Dens3{1}(2)*CalculateMAC(proteineStr, eEL),...
-  Dens3{1}(2)*CalculateMAC(proteineStr, eEH)];
-mu3Low{1}(:, 2) = Dens3{1}(2)*CalculateMACs(proteineStr, 1:eL);
-mu3High{1}(:, 2) = Dens3{1}(2)*CalculateMACs(proteineStr, 1:eH);
+pmd.Dens3{1}(2) = proteineDens;
+pmd.Att3{1}(:, 2) = [pmd.Dens3{1}(2)*CalculateMAC(proteineStr, smd.eEL),...
+  pmd.Dens3{1}(2)*CalculateMAC(proteineStr, smd.eEH)];
+mu3Low{1}(:, 2) = pmd.Dens3{1}(2)*CalculateMACs(proteineStr, 1:smd.eL);
+mu3High{1}(:, 2) = pmd.Dens3{1}(2)*CalculateMACs(proteineStr, 1:smd.eH);
 
-Dens3{1}(3) = waterDens;
-Att3{1}(:, 3) = [Dens3{1}(3)*CalculateMAC(waterStr, eEL),...
-  Dens3{1}(3)*CalculateMAC(waterStr, eEH)];
-mu3Low{1}(:, 3) = Dens3{1}(3)*CalculateMACs(waterStr, 1:eL);
-mu3High{1}(:, 3) = Dens3{1}(3)*CalculateMACs(waterStr, 1:eH);
+pmd.Dens3{1}(3) = waterDens;
+pmd.Att3{1}(:, 3) = [pmd.Dens3{1}(3)*CalculateMAC(waterStr, smd.eEL),...
+  pmd.Dens3{1}(3)*CalculateMAC(waterStr, smd.eEH)];
+mu3Low{1}(:, 3) = pmd.Dens3{1}(3)*CalculateMACs(waterStr, 1:smd.eL);
+mu3High{1}(:, 3) = pmd.Dens3{1}(3)*CalculateMACs(waterStr, 1:smd.eH);
 
 % Tissue 3
 Dens3SA(1) = prostDens;
-Att3SA(:, 1) = [Dens3SA(1)*CalculateMAC(prostStr, eEL),...
-  Dens3SA(1)*CalculateMAC(prostStr, eEH)];
-mu3LowSA(:, 1) = Dens3SA(1)*CalculateMACs(prostStr, 1:eL);
-mu3HighSA(:, 1) = Dens3SA(1)*CalculateMACs(prostStr, 1:eH);
+Att3SA(:, 1) = [Dens3SA(1)*CalculateMAC(prostStr, smd.eEL),...
+  Dens3SA(1)*CalculateMAC(prostStr, smd.eEH)];
+mu3LowSA(:, 1) = Dens3SA(1)*CalculateMACs(prostStr, 1:smd.eL);
+mu3HighSA(:, 1) = Dens3SA(1)*CalculateMACs(prostStr, 1:smd.eH);
 
 Dens3SA(2) = waterDens;
-Att3SA(:, 2) = [Dens3SA(2)*CalculateMAC(waterStr, eEL),...
-  Dens3SA(2)*CalculateMAC(waterStr, eEH)];
-mu3LowSA(:, 2) = Dens3SA(2)*CalculateMACs(waterStr, 1:eL);
-mu3HighSA(:, 2) = Dens3SA(2)*CalculateMACs(waterStr, 1:eH);
+Att3SA(:, 2) = [Dens3SA(2)*CalculateMAC(waterStr, smd.eEL),...
+  Dens3SA(2)*CalculateMAC(waterStr, smd.eEH)];
+mu3LowSA(:, 2) = Dens3SA(2)*CalculateMACs(waterStr, 1:smd.eL);
+mu3HighSA(:, 2) = Dens3SA(2)*CalculateMACs(waterStr, 1:smd.eH);
 
 Dens3SA(3) = caDens;
-Att3SA(:, 3) = [Dens3SA(3)*CalculateMAC(caStr, eEL),...
-  Dens3SA(3)*CalculateMAC(caStr, eEH)];
-mu3LowSA(:, 3) = Dens3SA(3)*CalculateMACs(caStr, 1:eL);
-mu3HighSA(:, 3) = Dens3SA(3)*CalculateMACs(caStr, 1:eH);
+Att3SA(:, 3) = [Dens3SA(3)*CalculateMAC(caStr, smd.eEL),...
+  Dens3SA(3)*CalculateMAC(caStr, smd.eEH)];
+mu3LowSA(:, 3) = Dens3SA(3)*CalculateMACs(caStr, 1:smd.eL);
+mu3HighSA(:, 3) = Dens3SA(3)*CalculateMACs(caStr, 1:smd.eH);
 
 % Ordering of coefficients are important first tissues for 2MD in the
 % output order of tissue classification and then tissues for 3MD in output
 % order of tissue classification.
-tissueOrder2 = [1];
-tissueOrder3 = [1];
+pmd.tissueOrder2 = [1];
+pmd.tissueOrder3 = [1];
 
-muLow = cat(2, mu2Low{1}, mu3Low{1});
-muHigh = cat(2, mu2High{1}, mu3High{1});
+pmd.muLow = cat(2, mu2Low{1}, mu3Low{1});
+pmd.muHigh = cat(2, mu2High{1}, mu3High{1});

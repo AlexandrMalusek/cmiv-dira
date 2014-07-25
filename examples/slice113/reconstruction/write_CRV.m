@@ -13,7 +13,7 @@ p3MD = 1;       % using 3MS.
 numbiter = 4;   % Number of iterations. 
 
 % Function for tissue classification.
-tissueClass = @myTissueClassification;
+tissueClassification = @myTissueClassification;
 
 disp('Setting variables...')
 tic
