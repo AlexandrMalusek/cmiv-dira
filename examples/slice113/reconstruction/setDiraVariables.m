@@ -71,7 +71,8 @@ caDens = 1.550;
 waterStr = 'H0.666667O0.333333';
 waterDens = 1.000;
 
-% Tissue 1
+% Doublets for MD2
+pmd.name2{1}{1} = 'compact bone';
 pmd.Dens2{1}(1) = boneDens;
 Cross2{1}(:, 1) = [CalculateMAC(boneStr, smd.eEL),...
   CalculateMAC(boneStr, smd.eEH)];
@@ -79,6 +80,7 @@ pmd.Att2{1}(:, 1) = pmd.Dens2{1}(1)*Cross2{1}(:, 1);
 mu2Low{1}(:, 1) = CalculateMACs(boneStr, 1:smd.eL);
 mu2High{1}(:, 1) = CalculateMACs(boneStr, 1:smd.eH);
 
+pmd.name2{1}{2} = 'bone marrow';
 pmd.Dens2{1}(2) = marrowMixDens;
 Cross2{1}(:, 2) = [CalculateMAC(marrowMixStr, smd.eEL),...
   CalculateMAC(marrowMixStr, smd.eEH)];
@@ -86,19 +88,22 @@ pmd.Att2{1}(:, 2) = pmd.Dens2{1}(2)*Cross2{1}(:, 2);
 mu2Low{1}(:, 2) = CalculateMACs(marrowMixStr, 1:smd.eL);
 mu2High{1}(:, 2) = CalculateMACs(marrowMixStr, 1:smd.eH);
 
-% Tissue 2
+% Triplets for MD3
+pmd.name3{1}{1} = 'lipid';
 pmd.Dens3{1}(1) = lipidDens;
 pmd.Att3{1}(:, 1) = [pmd.Dens3{1}(1)*CalculateMAC(lipidStr, smd.eEL),...
   pmd.Dens3{1}(1)*CalculateMAC(lipidStr, smd.eEH)];
 mu3Low{1}(:, 1) = pmd.Dens3{1}(1)*CalculateMACs(lipidStr, 1:smd.eL);
 mu3High{1}(:, 1) = pmd.Dens3{1}(1)*CalculateMACs(lipidStr, 1:smd.eH);
 
+pmd.name3{1}{2} = 'proteine';
 pmd.Dens3{1}(2) = proteineDens;
 pmd.Att3{1}(:, 2) = [pmd.Dens3{1}(2)*CalculateMAC(proteineStr, smd.eEL),...
   pmd.Dens3{1}(2)*CalculateMAC(proteineStr, smd.eEH)];
 mu3Low{1}(:, 2) = pmd.Dens3{1}(2)*CalculateMACs(proteineStr, 1:smd.eL);
 mu3High{1}(:, 2) = pmd.Dens3{1}(2)*CalculateMACs(proteineStr, 1:smd.eH);
 
+pmd.name3{1}{3} = 'water';
 pmd.Dens3{1}(3) = waterDens;
 pmd.Att3{1}(:, 3) = [pmd.Dens3{1}(3)*CalculateMAC(waterStr, smd.eEL),...
   pmd.Dens3{1}(3)*CalculateMAC(waterStr, smd.eEH)];

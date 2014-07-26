@@ -15,4 +15,13 @@ classdef ScannerModelData < handle
     interpolation % Joseph projection generation
   end
 
+  methods
+    function PlotSpectra(smd, varargin)
+      % Plot energy spectra
+      plot(smd.EHigh, smd.NHigh, '.-', smd.ELow, smd.NLow, '.-', varargin{:})
+      title('Energy spectra')
+      xlabel('energy (keV)')
+      ylabel('number of photons per bin')
+    end
+  end % methods
 end % classdef

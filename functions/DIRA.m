@@ -297,6 +297,8 @@ Wei3Set = pmd.Wei3Set;
 %% Save results
 save(resultsFileName, 'recLowSet', 'recHighSet', 'densSet',...
   'Wei2Set', 'Wei3Set');
+save('pmd.mat', 'pmd');
+save('smd.mat', 'smd');
 
 toc
 fprintf('\nDone!\n')
