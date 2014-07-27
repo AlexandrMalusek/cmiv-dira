@@ -4,6 +4,11 @@
 p = path();
 path(p, '../../../functions;../../../data')
 
+%% Load data and initialize variables
+% ------------------------------------
+disp('Loading data and initializing variables...')
+tic
+
 % Names of files
 resultsFileName = 'results.mat';
 sinogramsFileName = 'sinograms.mat';
@@ -38,7 +43,9 @@ pmd.projLow = sinograms.projLow;
 pmd.projHigh = sinograms.projHigh;
 pmd.projLowBH = sinogramsBH.projLowBH;
 pmd.projHighBH = sinogramsBH.projHighBH;
-
+pmd.p2MD = 1;         % using 2MD.
+pmd.p3MD = 1;         % using 3MS.
+pmd.numbiter = 4;     % Number of iterations.
 
 %% Elemental material composition (number of atoms per molecule) and
 % mass density (in g/cm^3).
@@ -76,7 +83,7 @@ pmd.name2{1}{1} = 'compact bone';
 pmd.Dens2{1}(1) = boneDens;
 Cross2{1}(:, 1) = [CalculateMAC(boneStr, smd.eEL),...
   CalculateMAC(boneStr, smd.eEH)];
-pmd.Att2{1}(:, 1) = pmd.Dens2{1}(1)*Cross2{1}(:, 1);
+pmd.Att2{1}(:, 1) = pmd.Dens2{1}(1) * Cross2{1}(:, 1);
 mu2Low{1}(:, 1) = CalculateMACs(boneStr, 1:smd.eL);
 mu2High{1}(:, 1) = CalculateMACs(boneStr, 1:smd.eH);
 
@@ -84,50 +91,50 @@ pmd.name2{1}{2} = 'bone marrow';
 pmd.Dens2{1}(2) = marrowMixDens;
 Cross2{1}(:, 2) = [CalculateMAC(marrowMixStr, smd.eEL),...
   CalculateMAC(marrowMixStr, smd.eEH)];
-pmd.Att2{1}(:, 2) = pmd.Dens2{1}(2)*Cross2{1}(:, 2);
+pmd.Att2{1}(:, 2) = pmd.Dens2{1}(2) * Cross2{1}(:, 2);
 mu2Low{1}(:, 2) = CalculateMACs(marrowMixStr, 1:smd.eL);
 mu2High{1}(:, 2) = CalculateMACs(marrowMixStr, 1:smd.eH);
 
 % Triplets for MD3
 pmd.name3{1}{1} = 'lipid';
 pmd.Dens3{1}(1) = lipidDens;
-pmd.Att3{1}(:, 1) = [pmd.Dens3{1}(1)*CalculateMAC(lipidStr, smd.eEL),...
-  pmd.Dens3{1}(1)*CalculateMAC(lipidStr, smd.eEH)];
-mu3Low{1}(:, 1) = pmd.Dens3{1}(1)*CalculateMACs(lipidStr, 1:smd.eL);
-mu3High{1}(:, 1) = pmd.Dens3{1}(1)*CalculateMACs(lipidStr, 1:smd.eH);
+pmd.Att3{1}(:, 1) = [pmd.Dens3{1}(1) * CalculateMAC(lipidStr, smd.eEL),...
+  pmd.Dens3{1}(1) * CalculateMAC(lipidStr, smd.eEH)];
+mu3Low{1}(:, 1) = pmd.Dens3{1}(1) * CalculateMACs(lipidStr, 1:smd.eL);
+mu3High{1}(:, 1) = pmd.Dens3{1}(1) * CalculateMACs(lipidStr, 1:smd.eH);
 
 pmd.name3{1}{2} = 'proteine';
 pmd.Dens3{1}(2) = proteineDens;
-pmd.Att3{1}(:, 2) = [pmd.Dens3{1}(2)*CalculateMAC(proteineStr, smd.eEL),...
-  pmd.Dens3{1}(2)*CalculateMAC(proteineStr, smd.eEH)];
-mu3Low{1}(:, 2) = pmd.Dens3{1}(2)*CalculateMACs(proteineStr, 1:smd.eL);
-mu3High{1}(:, 2) = pmd.Dens3{1}(2)*CalculateMACs(proteineStr, 1:smd.eH);
+pmd.Att3{1}(:, 2) = [pmd.Dens3{1}(2) * CalculateMAC(proteineStr, smd.eEL),...
+  pmd.Dens3{1}(2) * CalculateMAC(proteineStr, smd.eEH)];
+mu3Low{1}(:, 2) = pmd.Dens3{1}(2) * CalculateMACs(proteineStr, 1:smd.eL);
+mu3High{1}(:, 2) = pmd.Dens3{1}(2) * CalculateMACs(proteineStr, 1:smd.eH);
 
 pmd.name3{1}{3} = 'water';
 pmd.Dens3{1}(3) = waterDens;
-pmd.Att3{1}(:, 3) = [pmd.Dens3{1}(3)*CalculateMAC(waterStr, smd.eEL),...
-  pmd.Dens3{1}(3)*CalculateMAC(waterStr, smd.eEH)];
-mu3Low{1}(:, 3) = pmd.Dens3{1}(3)*CalculateMACs(waterStr, 1:smd.eL);
-mu3High{1}(:, 3) = pmd.Dens3{1}(3)*CalculateMACs(waterStr, 1:smd.eH);
+pmd.Att3{1}(:, 3) = [pmd.Dens3{1}(3) * CalculateMAC(waterStr, smd.eEL),...
+  pmd.Dens3{1}(3) * CalculateMAC(waterStr, smd.eEH)];
+mu3Low{1}(:, 3) = pmd.Dens3{1}(3) * CalculateMACs(waterStr, 1:smd.eL);
+mu3High{1}(:, 3) = pmd.Dens3{1}(3) * CalculateMACs(waterStr, 1:smd.eH);
 
 % Tissue 3
-Dens3SA(1) = prostDens;
-Att3SA(:, 1) = [Dens3SA(1)*CalculateMAC(prostStr, smd.eEL),...
-  Dens3SA(1)*CalculateMAC(prostStr, smd.eEH)];
-mu3LowSA(:, 1) = Dens3SA(1)*CalculateMACs(prostStr, 1:smd.eL);
-mu3HighSA(:, 1) = Dens3SA(1)*CalculateMACs(prostStr, 1:smd.eH);
+pmd.Dens3SA(1) = prostDens;
+pmd.Att3SA(:, 1) = [pmd.Dens3SA(1) * CalculateMAC(prostStr, smd.eEL),...
+  pmd.Dens3SA(1) * CalculateMAC(prostStr, smd.eEH)];
+pmd.mu3LowSA(:, 1) = pmd.Dens3SA(1) * CalculateMACs(prostStr, 1:smd.eL);
+pmd.mu3HighSA(:, 1) = pmd.Dens3SA(1) * CalculateMACs(prostStr, 1:smd.eH);
 
-Dens3SA(2) = waterDens;
-Att3SA(:, 2) = [Dens3SA(2)*CalculateMAC(waterStr, smd.eEL),...
-  Dens3SA(2)*CalculateMAC(waterStr, smd.eEH)];
-mu3LowSA(:, 2) = Dens3SA(2)*CalculateMACs(waterStr, 1:smd.eL);
-mu3HighSA(:, 2) = Dens3SA(2)*CalculateMACs(waterStr, 1:smd.eH);
+pmd.Dens3SA(2) = waterDens;
+pmd.Att3SA(:, 2) = [pmd.Dens3SA(2) * CalculateMAC(waterStr, smd.eEL),...
+  pmd.Dens3SA(2) * CalculateMAC(waterStr, smd.eEH)];
+pmd.mu3LowSA(:, 2) = pmd.Dens3SA(2) * CalculateMACs(waterStr, 1:smd.eL);
+pmd.mu3HighSA(:, 2) = pmd.Dens3SA(2) * CalculateMACs(waterStr, 1:smd.eH);
 
-Dens3SA(3) = caDens;
-Att3SA(:, 3) = [Dens3SA(3)*CalculateMAC(caStr, smd.eEL),...
-  Dens3SA(3)*CalculateMAC(caStr, smd.eEH)];
-mu3LowSA(:, 3) = Dens3SA(3)*CalculateMACs(caStr, 1:smd.eL);
-mu3HighSA(:, 3) = Dens3SA(3)*CalculateMACs(caStr, 1:smd.eH);
+pmd.Dens3SA(3) = caDens;
+pmd.Att3SA(:, 3) = [pmd.Dens3SA(3) * CalculateMAC(caStr, smd.eEL),...
+  pmd.Dens3SA(3) * CalculateMAC(caStr, smd.eEH)];
+pmd.mu3LowSA(:, 3) = pmd.Dens3SA(3) * CalculateMACs(caStr, 1:smd.eL);
+pmd.mu3HighSA(:, 3) = pmd.Dens3SA(3) * CalculateMACs(caStr, 1:smd.eH);
 
 % Ordering of coefficients are important first tissues for 2MD in the
 % output order of tissue classification and then tissues for 3MD in output
@@ -137,3 +144,7 @@ pmd.tissueOrder3 = [1];
 
 pmd.muLow = cat(2, mu2Low{1}, mu3Low{1});
 pmd.muHigh = cat(2, mu2High{1}, mu3High{1});
+
+% Define the prostate mask
+load(prostateMaskFileName);
+pmd.maskSA = maskProst;

@@ -7,18 +7,11 @@ clear all
 close all
 clc
 
-% Options
-p2MD = 1;       % using 2MD.
-p3MD = 1;       % using 3MS.
-numbiter = 4;   % Number of iterations. 
-
 % Function for tissue classification.
 tissueClassification = @myTissueClassification;
 
-disp('Setting variables...')
-tic
-
+% Set variables
 setDiraVariables;
 
-% Run the reconstruction
+% Do the reconstruction
 DIRA

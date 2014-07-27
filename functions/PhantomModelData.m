@@ -9,25 +9,40 @@
 
 classdef PhantomModelData < handle
   properties
+    numbiter      % number of iterations
+    % Projections and reconstructed images
     projLow       % [Nd x Np double] projections for Ul
     projHigh      % [Nd x Np double] projections for Uh
     projLowBH     % [Nd x Np double] WBHC projections for Ul
     projHighBH    % [Nd x Np double] WBHC projections for Uh
-    name2         % {Nt2 x 1 cell}
-    name3         % {Nt3 x 1 cell}
-    Dens2         % {Nt2 x 1 cell}[1 x 2 double] mass density for MD2
-    Att2          % {Nt2 x 1 cell}[2 x 2 double] LAC for MD2
-    Dens3         % {Nt3 x 1 cell}[1 x 3 double] mass density for MD3
-    Att3          % {Nt3 x 1 cell}[2 x 3 double] LAC for MD3
-    muLow         % [Ncl x (Nt2+Nt3) double] LACs of doublets and triplets at spectrum energies
-    muHigh        % [Nch x (Nt2+Nt3) double] LACs of doublets and triplets at spectrum energies
-    tissueOrder2  %
-    tissueOrder3  %
     recLowSet     % {Ni x 1 cell}[Nr x Nr double]
     recHighSet    % {Ni x 1 cell}[Nr x Nr double]
+    % Two-material decomposition (MD2) data
+    p2MD          % boolean, perform MD2?
+    name2         % {Nt2 x 1 cell}
+    Dens2         % {Nt2 x 1 cell}[1 x 2 double] tabulated mass density
+    Att2          % {Nt2 x 1 cell}[2 x 2 double] tabulated LACs
+    tissueOrder2  %
     densSet       % {Ni x 1 cell}
-    Wei2Set       % {Ni x 1 cell}
-    Wei3Set       % {Ni x 1 cell}
+    Wei2Set       % {Ni x 1 cell}[Nr x Nr double] calculated mass fractions
+    % Three-material decomposition (MD3) data
+    p3MD          % boolean, perform MD3?
+    name3         % {Nt3 x 1 cell}
+    Dens3         % {Nt3 x 1 cell}[1 x 3 double] tabulated mass density
+    Att3          % {Nt3 x 1 cell}[2 x 3 double] tabulated LACs
+    tissueOrder3  %
+    Wei3Set       % {Ni x 1 cell}[Nr x Nr double] calculated mass fractions
+    % Linear attenuation coefficients for MD2 and MD3
+    muLow         % [Ncl x (Nt2+Nt3) double] LACs of doublets and triplets at spectrum energies
+    muHigh        % [Nch x (Nt2+Nt3) double] LACs of doublets and triplets at spectrum energies
+    % Post processing three-material decomposition data
+    Dens3SA
+    Att3SA
+    mu3LowSA
+    mu3HighSA
+    maskSA
+    Wei3SA
+    WeiAv
   end
 
   methods
