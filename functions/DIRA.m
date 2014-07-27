@@ -42,12 +42,16 @@ for k=2:length(smd.EHigh)-1;
 end
 uHigh = sum(sp)/2;
 
+% Filter original projections 
+pmd.projLow = rampWindowForMeasuredProjections(pmd.projLow, r2Vec);
+pmd.projHigh = rampWindowForMeasuredProjections(pmd.projHigh, r2Vec);
+
 %% Reconstruction No.0
 %
 fprintf('\nStarting initial reconstruction...\n')
 
-phm1 = iradon(pmd.projLowBH, degVec, 'linear', 'Hann', 1, smd.N1)/smd.dt1;
-phm2 = iradon(pmd.projHighBH, degVec, 'linear', 'Hann', 1, smd.N1)/smd.dt1;
+phm1 = reconstructMeasuredProjections(pmd.projLowBH, r2Vec, degVec, smd.N1, smd.dt1);
+phm2 = reconstructMeasuredProjections(pmd.projHighBH, r2Vec, degVec, smd.N1, smd.dt1);
 
 pmd.recLowSet = cell(pmd.numbiter+1, 1);
 pmd.recHighSet = cell(pmd.numbiter+1, 1);
@@ -212,8 +216,8 @@ for iter = 1:pmd.numbiter
   % Reconstruction
   % --------------
   disp('Reconstruction...')
-  recLow = iradon(ZLow, degVec, 'linear', 'Hann', 1, smd.N1)/smd.dt1;
-  recHigh = iradon(ZHigh, degVec, 'linear', 'Hann', 1, smd.N1)/smd.dt1;
+  recLow = reconstructIteratedProjections(ZLow, r2Vec, degVec, smd.N1, smd.dt1);
+  recHigh = reconstructIteratedProjections(ZHigh, r2Vec, degVec, smd.N1, smd.dt1);
   
   pmd.recLowSet{iter+1} = recLow;
   pmd.recHighSet{iter+1} = recHigh;

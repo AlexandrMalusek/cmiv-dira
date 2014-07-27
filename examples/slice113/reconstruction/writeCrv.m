@@ -10,6 +10,15 @@ clc
 % Function for tissue classification.
 tissueClassification = @myTissueClassification;
 
+rampWindowForMeasuredProjections = @rampWindowForMeasuredProjectionsDefault;
+% rampWindowForMeasuredProjections = @myRampWindowForMeasuredProjections;
+
+reconstructIteratedProjections = @reconstructIteratedProjectionsDefault;
+% reconstructIteratedProjections = @myReconstructIteratedProjections;
+
+reconstructMeasuredProjections = @reconstructMeasuredProjectionsDefault;
+% reconstructMeasuredProjections = @myReconstructMeasuredProjections;
+
 % Set variables
 setDiraVariables;
 
