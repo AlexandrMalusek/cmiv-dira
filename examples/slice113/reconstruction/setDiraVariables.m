@@ -1,8 +1,7 @@
 %% Set DIRA's variables
 %
-% Set Matlab path
-p = path();
-path(p, '../../../functions;../../../data')
+
+setMatlabPath;
 
 %% Load data and initialize variables
 % ------------------------------------
@@ -20,32 +19,46 @@ spectra =  load(spectraFileName);
 
 %% Scanner model data
 smd = ScannerModelData;
-smd.eL = 80;            % low x-ray tube voltage in kV
-smd.eH = 140;           % high x-ray tube voltage in kV
-smd.eEL = 50.0;         % low effective energy in keV
-smd.eEH = 88.5;         % high effective energy in keV
+smd.eL = 80;              % low x-ray tube voltage in kV
+smd.eH = 140;             % high x-ray tube voltage in kV
 smd.ELow = spectra.currSpectLow(1:75, 1);
 smd.NLow = spectra.currSpectLow(1:75, 2);
 smd.EHigh = spectra.currSpectHigh(1:135, 1);
 smd.NHigh = spectra.currSpectHigh(1:135, 2);
-smd.L = 0.595;          % distance source - rot. center in m
-smd.alpha = 38.4;       % fanbeam angle in deg
-smd.N1 = 511;           % number of detector elements after rebinning
+smd.L = 0.595;            % distance source - rot. center in m
+smd.alpha = 38.4;         % fanbeam angle in deg
+smd.N1 = 511;             % number of detector elements after rebinning
 smd.dt1 = 0.402298392584693/(smd.N1+1); % detector element size
-smd.interpolation = 2;  % Joseph projection generation
+smd.interpolation = 2;    % Joseph projection generation
+smd.N0 = 512;             % nr of detector elements
+smd.M0 = 560;             % nr of projections
+smd.fact = 4;             % factor for no rebinned projections
+smd.dfi0 = 228 / smd.M0;  % angle increment in degrees
+smd.dfi1 = 1 / smd.fact;  % new angle increment in degrees
+smd.M1 = 180 * smd.fact;  % new nr of projections
+smd.dt0 = (smd.alpha * pi / 180) / smd.N0;  % Detector element arc length [rad]
+smd.gamma = atan(smd.N0 / 2 * smd.dt0 / smd.L);  % First angle after rebinning [rad]
 
 sinograms = load(sinogramsFileName);
 sinogramsBH = load(sinogramsBhFileName);
 
 % Phantom model data
 pmd = PhantomModelData;
+pmd.numbiter = 4;     % Number of iterations.
+pmd.eEL = 50.0;       % low effective energy in keV
+pmd.eEH = 88.5;       % high effective energy in keV
 pmd.projLow = sinograms.projLow;
 pmd.projHigh = sinograms.projHigh;
 pmd.projLowBH = sinogramsBH.projLowBH;
 pmd.projHighBH = sinogramsBH.projHighBH;
 pmd.p2MD = 1;         % using 2MD.
 pmd.p3MD = 1;         % using 3MS.
-pmd.numbiter = 4;     % Number of iterations.
+
+
+% The setting of material data takes long time. Skip it if not needed.
+if ~pSetMaterialData
+  return
+end
 
 %% Elemental material composition (number of atoms per molecule) and
 % mass density (in g/cm^3).
@@ -81,16 +94,16 @@ waterDens = 1.000;
 % Doublets for MD2
 pmd.name2{1}{1} = 'compact bone';
 pmd.Dens2{1}(1) = boneDens;
-Cross2{1}(:, 1) = [CalculateMAC(boneStr, smd.eEL),...
-  CalculateMAC(boneStr, smd.eEH)];
+Cross2{1}(:, 1) = [CalculateMAC(boneStr, pmd.eEL),...
+  CalculateMAC(boneStr, pmd.eEH)];
 pmd.Att2{1}(:, 1) = pmd.Dens2{1}(1) * Cross2{1}(:, 1);
 mu2Low{1}(:, 1) = CalculateMACs(boneStr, 1:smd.eL);
 mu2High{1}(:, 1) = CalculateMACs(boneStr, 1:smd.eH);
 
 pmd.name2{1}{2} = 'bone marrow';
 pmd.Dens2{1}(2) = marrowMixDens;
-Cross2{1}(:, 2) = [CalculateMAC(marrowMixStr, smd.eEL),...
-  CalculateMAC(marrowMixStr, smd.eEH)];
+Cross2{1}(:, 2) = [CalculateMAC(marrowMixStr, pmd.eEL),...
+  CalculateMAC(marrowMixStr, pmd.eEH)];
 pmd.Att2{1}(:, 2) = pmd.Dens2{1}(2) * Cross2{1}(:, 2);
 mu2Low{1}(:, 2) = CalculateMACs(marrowMixStr, 1:smd.eL);
 mu2High{1}(:, 2) = CalculateMACs(marrowMixStr, 1:smd.eH);
@@ -98,41 +111,41 @@ mu2High{1}(:, 2) = CalculateMACs(marrowMixStr, 1:smd.eH);
 % Triplets for MD3
 pmd.name3{1}{1} = 'lipid';
 pmd.Dens3{1}(1) = lipidDens;
-pmd.Att3{1}(:, 1) = [pmd.Dens3{1}(1) * CalculateMAC(lipidStr, smd.eEL),...
-  pmd.Dens3{1}(1) * CalculateMAC(lipidStr, smd.eEH)];
+pmd.Att3{1}(:, 1) = [pmd.Dens3{1}(1) * CalculateMAC(lipidStr, pmd.eEL),...
+  pmd.Dens3{1}(1) * CalculateMAC(lipidStr, pmd.eEH)];
 mu3Low{1}(:, 1) = pmd.Dens3{1}(1) * CalculateMACs(lipidStr, 1:smd.eL);
 mu3High{1}(:, 1) = pmd.Dens3{1}(1) * CalculateMACs(lipidStr, 1:smd.eH);
 
 pmd.name3{1}{2} = 'proteine';
 pmd.Dens3{1}(2) = proteineDens;
-pmd.Att3{1}(:, 2) = [pmd.Dens3{1}(2) * CalculateMAC(proteineStr, smd.eEL),...
-  pmd.Dens3{1}(2) * CalculateMAC(proteineStr, smd.eEH)];
+pmd.Att3{1}(:, 2) = [pmd.Dens3{1}(2) * CalculateMAC(proteineStr, pmd.eEL),...
+  pmd.Dens3{1}(2) * CalculateMAC(proteineStr, pmd.eEH)];
 mu3Low{1}(:, 2) = pmd.Dens3{1}(2) * CalculateMACs(proteineStr, 1:smd.eL);
 mu3High{1}(:, 2) = pmd.Dens3{1}(2) * CalculateMACs(proteineStr, 1:smd.eH);
 
 pmd.name3{1}{3} = 'water';
 pmd.Dens3{1}(3) = waterDens;
-pmd.Att3{1}(:, 3) = [pmd.Dens3{1}(3) * CalculateMAC(waterStr, smd.eEL),...
-  pmd.Dens3{1}(3) * CalculateMAC(waterStr, smd.eEH)];
+pmd.Att3{1}(:, 3) = [pmd.Dens3{1}(3) * CalculateMAC(waterStr, pmd.eEL),...
+  pmd.Dens3{1}(3) * CalculateMAC(waterStr, pmd.eEH)];
 mu3Low{1}(:, 3) = pmd.Dens3{1}(3) * CalculateMACs(waterStr, 1:smd.eL);
 mu3High{1}(:, 3) = pmd.Dens3{1}(3) * CalculateMACs(waterStr, 1:smd.eH);
 
 % Tissue 3
 pmd.Dens3SA(1) = prostDens;
-pmd.Att3SA(:, 1) = [pmd.Dens3SA(1) * CalculateMAC(prostStr, smd.eEL),...
-  pmd.Dens3SA(1) * CalculateMAC(prostStr, smd.eEH)];
+pmd.Att3SA(:, 1) = [pmd.Dens3SA(1) * CalculateMAC(prostStr, pmd.eEL),...
+  pmd.Dens3SA(1) * CalculateMAC(prostStr, pmd.eEH)];
 pmd.mu3LowSA(:, 1) = pmd.Dens3SA(1) * CalculateMACs(prostStr, 1:smd.eL);
 pmd.mu3HighSA(:, 1) = pmd.Dens3SA(1) * CalculateMACs(prostStr, 1:smd.eH);
 
 pmd.Dens3SA(2) = waterDens;
-pmd.Att3SA(:, 2) = [pmd.Dens3SA(2) * CalculateMAC(waterStr, smd.eEL),...
-  pmd.Dens3SA(2) * CalculateMAC(waterStr, smd.eEH)];
+pmd.Att3SA(:, 2) = [pmd.Dens3SA(2) * CalculateMAC(waterStr, pmd.eEL),...
+  pmd.Dens3SA(2) * CalculateMAC(waterStr, pmd.eEH)];
 pmd.mu3LowSA(:, 2) = pmd.Dens3SA(2) * CalculateMACs(waterStr, 1:smd.eL);
 pmd.mu3HighSA(:, 2) = pmd.Dens3SA(2) * CalculateMACs(waterStr, 1:smd.eH);
 
 pmd.Dens3SA(3) = caDens;
-pmd.Att3SA(:, 3) = [pmd.Dens3SA(3) * CalculateMAC(caStr, smd.eEL),...
-  pmd.Dens3SA(3) * CalculateMAC(caStr, smd.eEH)];
+pmd.Att3SA(:, 3) = [pmd.Dens3SA(3) * CalculateMAC(caStr, pmd.eEL),...
+  pmd.Dens3SA(3) * CalculateMAC(caStr, pmd.eEH)];
 pmd.mu3LowSA(:, 3) = pmd.Dens3SA(3) * CalculateMACs(caStr, 1:smd.eL);
 pmd.mu3HighSA(:, 3) = pmd.Dens3SA(3) * CalculateMACs(caStr, 1:smd.eH);
 

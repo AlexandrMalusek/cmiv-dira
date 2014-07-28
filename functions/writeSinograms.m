@@ -13,6 +13,8 @@
 % Maria Magnusson 2013-07-17 - Updated
 % Alexandr Malusek 2014-07-13 - Simplified
 
+disp('Rebinning ...');
+
 for i = 1:2
   % Process data for low and high tube voltages
 
@@ -39,15 +41,15 @@ for i = 1:2
   % Using drasim data
   %------------------
   if strcmp(spect, 'Low');
-    drasim = flipud(create_sinogram(0,M0,N0)'); % Create sinogram of data
+    drasim = flipud(create_sinogram(0, smd.M0, smd.N0)'); % Create sinogram of data
   elseif strcmp(spect, 'High');
-    drasim = flipud(create_sinogram(1,M0,N0)'); % Create sinogram of data
+    drasim = flipud(create_sinogram(1, smd.M0, smd.N0)'); % Create sinogram of data
   end
   drasim = -log(drasim/max(max(drasim)));
   
   % Rebinning of fan beam data
   %---------------------------
-  rebsim = rebinning(drasim, L, dt0, dfi0, 1, 0, dt1, dfi1, N1, M1);
+  rebsim = rebinning(drasim, smd.L, smd.dt0, smd.dfi0, 1, 0, smd.dt1, smd.dfi1, smd.N1, smd.M1);
   
   % Projection data (save for iterative loop)
   if strcmp(spect, 'Low');
@@ -55,15 +57,17 @@ for i = 1:2
   elseif strcmp(spect, 'High');
     projHigh  = rebsim;
   end
-  recPolysim = parFB(rebsim, dt1, gamma); % Parallel filtered BP
+  recPolysim = parFB(rebsim, smd.dt1, smd.gamma); % Parallel filtered BP
   
   %  Plots of data without BHC
   %---------------------------
   figure()
-  subplot(221);imagesc(drasim);title('Fan beam sinogram');colorbar;
-  subplot(222);imagesc(rebsim);title('Parallel beam sinogram');colorbar;
-  subplot(223);imagesc(recPolysim);title('Reconstructed LAC (1/m)');colorbar;
-  subplot(224);plot(recPolysim(N0/2,:));title('LAC profile (1/m)');axis([1 N1 minv maxv]);grid on;
+  subplot(221); imagesc(drasim); title('Fan beam sinogram'); colorbar;
+  subplot(222); imagesc(rebsim); title('Parallel beam sinogram'); colorbar;
+  subplot(223); imagesc(recPolysim); title('Reconstructed LAC (1/m)'); colorbar;
+  subplot(224); plot(recPolysim(smd.N0/2,:)); title('LAC profile (1/m)');
+  axis([1 smd.N1 minv maxv]);
+  grid on;
   
   % Using CT-numbers
   %-----------------
@@ -72,9 +76,9 @@ for i = 1:2
   
   % Preforming BHC
   %---------------
-  dist = zeros(N1,M1);      
-  for  n = 1:M1
-    for  m = 1:N1
+  dist = zeros(smd.N1, smd.M1);      
+  for  n = 1:smd.M1
+    for  m = 1:smd.N1
       value = rebsim(m,n);
       for k = 1:99
         if (value < polycr(k) && k==1)

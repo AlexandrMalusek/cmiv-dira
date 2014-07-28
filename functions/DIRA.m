@@ -58,7 +58,7 @@ pmd.recHighSet = cell(pmd.numbiter+1, 1);
 pmd.recLowSet{1} = phm1;
 pmd.recHighSet{1} = phm2;
 
-plotPolyImgs(phm1, phm2, 0)
+pmd.PlotRecLac(0);
 drawnow();
 
 %% Inital Tissue segmentation
@@ -100,12 +100,11 @@ if pmd.p3MD
 end
 
 if pmd.p2MD
-  plotWei2Dens(Wei2, dens)
+  pmd.PlotMassFractionsFromMd2(0);
 end
 if pmd.p3MD
-  plotWei3(Wei3);
+  pmd.PlotMassFractionsFromMd3(0);
 end
-
 drawnow();
 
 %% Iterate
@@ -223,7 +222,7 @@ for iter = 1:pmd.numbiter
   pmd.recHighSet{iter+1} = recHigh;
   
   if iter == pmd.numbiter
-    plotPolyImgs(recLow, recHigh, iter);
+    pmd.PlotRecLac(iter);
     drawnow();
   end
   
@@ -264,10 +263,10 @@ for iter = 1:pmd.numbiter
   end
   if iter == pmd.numbiter
     if pmd.p2MD
-      plotWei2Dens(Wei2, dens)
+      pmd.PlotMassFractionsFromMd2(iter);
     end
     if pmd.p3MD
-      plotWei3(Wei3);
+      pmd.PlotMassFractionsFromMd3(iter);
     end
   end
   drawnow();

@@ -20,6 +20,7 @@ reconstructMeasuredProjections = @reconstructMeasuredProjectionsDefault;
 % reconstructMeasuredProjections = @myReconstructMeasuredProjections;
 
 % Set variables
+pSetMaterialData = 1;
 setDiraVariables;
 
 % Do the reconstruction
