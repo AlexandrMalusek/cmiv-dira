@@ -7,7 +7,6 @@ classdef ScannerModelData < handle
     EHigh         % spectrum energies for Uh
     NHigh         % relative number of photons for Uh
     L             % distance source - rot. center in m
-    alpha         % fanbeam angle in deg
     N1            % number of detector elements after rebinning
     dt1           % detector element size = pixel distance
     interpolation % Joseph projection generation
@@ -20,6 +19,7 @@ classdef ScannerModelData < handle
     M1            % new nr of projections
     dt0           % Detector element arc length [rad]
     gamma         % first angle after rebinning [rad]
+    mask          % reconstruction mask
   end
 
   methods

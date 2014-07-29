@@ -38,6 +38,7 @@ classdef PhantomModelData < handle
     muLow         % [Ncl x (Nt2+Nt3) double] LACs of doublets and triplets at spectrum energies
     muHigh        % [Nch x (Nt2+Nt3) double] LACs of doublets and triplets at spectrum energies
     % Post processing three-material decomposition data
+    name3SA
     Dens3SA
     Att3SA
     mu3LowSA
@@ -68,17 +69,18 @@ classdef PhantomModelData < handle
       maxHigh = 23;
   
       figure();
+      hold off;
       subplot(1,2,1);
       imagesc(pmd.recLowSet{iter+1}, [minLow maxLow]);
       axis image; colorbar('horiz'); axis off;
       title(sprintf('LAC (1/m), E=%.1f keV, Ni=%d', pmd.eEL, iter), 'fontsize', 11);
-      colormap('bone');
+      colormap('gray');
       
       subplot(1,2,2);
       imagesc(pmd.recHighSet{iter+1}, [minHigh maxHigh]);
       axis image; colorbar('horiz'); axis off;
       title(sprintf('LAC (1/m), E=%.1f keV, Ni=%d', pmd.eEH, iter), 'fontsize', 11);
-      colormap('bone');
+      colormap('gray');
     end
 
     function PlotMassFractionsFromMd3(pmd, iter)
@@ -86,8 +88,16 @@ classdef PhantomModelData < handle
       %
       % iter: iteration number (0, ...)
 
+      % Define a colormap
+      jettmp = colormap(jet(128+32));
+      jetmod = jettmp(1+16:128+16,:);
+      jetmod(1,:) = jettmp(1,:); 
+      jetmod(128,:) = jettmp(128+32,:); 
+
       for i = 1:length(pmd.Wei3Set{iter+1})
 	figure()
+        hold off;
+        colormap(jetmod);
 	subplot(1,3,1), imagesc(100 * pmd.Wei3Set{iter+1}{i}(:, :, 1), [-50 150]);
 	axis image; axis off; colorbar('SouthOutside'); title(pmd.name3{i}{1});
 	subplot(1,3,2), imagesc(100 * pmd.Wei3Set{iter+1}{i}(:, :, 2), [-50 150]);
@@ -102,8 +112,16 @@ classdef PhantomModelData < handle
       %
       % iter: iteration number (0, ...)
 
+      % Define a colormap
+      jettmp = colormap(jet(128+32));
+      jetmod = jettmp(1+16:128+16,:);
+      jetmod(1,:) = jettmp(1,:); 
+      jetmod(128,:) = jettmp(128+32,:); 
+
       for i = 1:length(pmd.Wei2Set{iter+1})
 	figure()
+        hold off
+	colormap(jetmod);
 	subplot(1,3,1), imagesc(100 * pmd.Wei2Set{iter+1}{i}(:, :, 1), [-50 150]);
 	axis image; axis off; colorbar('SouthOutside'); title(pmd.name2{i}{1});
 	subplot(1,3,2), imagesc(100 * pmd.Wei2Set{iter+1}{i}(:, :, 2), [-50 150]);

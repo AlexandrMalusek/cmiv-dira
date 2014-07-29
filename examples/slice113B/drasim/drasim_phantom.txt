@@ -1,0 +1,31 @@
+Phantom "Centered slice 113"
+
+{ "117" [Ellipt_Cyl: x=  0.0mm y=   0.0mm z=0mm dx=176.0mm dy=90.0mm l=100mm achse(0,0,1) a_x( 0.020, -1.000, 0)] MAT117 }
+{ "107" [Ellipt_Cyl: x=-10.0mm y= -92.0mm z=0mm dx= 60.0mm dy=48.0mm l=100mm achse(0,0,1) a_x( 0.020, -1.000, 0)] MAT107 }
+{ "107" [Ellipt_Cyl: x=-10.0mm y=  94.0mm z=0mm dx= 60.0mm dy=46.0mm l=100mm achse(0,0,1) a_x( 0.000, -1.000, 0)] MAT107 }
+{ "107" [Ellipt_Cyl: x=-48.0mm y= -62.0mm z=0mm dx= 50.0mm dy=18.0mm l=100mm achse(0,0,1) a_x( 0.120, -0.993, 0)] MAT107 }
+{ "107" [Ellipt_Cyl: x=-44.0mm y=  68.0mm z=0mm dx= 42.0mm dy=18.0mm l=100mm achse(0,0,1) a_x(-0.238, -0.971, 0)] MAT107 }
+{ "107" [Ellipt_Cyl: x=-46.0mm y= -26.0mm z=0mm dx= 18.0mm dy=14.0mm l=100mm achse(0,0,1) a_x(-0.982, -0.190, 0)] MAT107 }
+{ "107" [Ellipt_Cyl: x=-48.0mm y=  38.0mm z=0mm dx= 20.0mm dy=12.0mm l=100mm achse(0,0,1) a_x( 0.830, -0.557, 0)] MAT107 }
+{ "107" [Ellipt_Cyl: x= 22.0mm y= -50.0mm z=0mm dx= 58.0mm dy=32.0mm l=100mm achse(0,0,1) a_x(-0.783, -0.622, 0)] MAT107 }
+{ "107" [Ellipt_Cyl: x= 24.0mm y=  54.0mm z=0mm dx= 62.0mm dy=34.0mm l=100mm achse(0,0,1) a_x( 0.703, -0.711, 0)] MAT107 }
+{ "107" [Ellipt_Cyl: x= 42.0mm y=-122.0mm z=0mm dx= 42.0mm dy=16.0mm l=100mm achse(0,0,1) a_x(-0.408, -0.913, 0)] MAT107 }
+{ "107" [Ellipt_Cyl: x= 48.0mm y=  98.0mm z=0mm dx= 52.0mm dy=16.0mm l=100mm achse(0,0,1) a_x( 0.389, -0.921, 0)] MAT107 }
+{ "107" [Ellipt_Cyl: x= 42.0mm y=  90.0mm z=0mm dx= 12.0mm dy=16.0mm l=100mm achse(0,0,1) a_x( 0.996, -0.091, 0)] MAT107 }
+{ "107" [Ellipt_Cyl: x= 42.0mm y= -90.0mm z=0mm dx= 12.0mm dy=14.0mm l=100mm achse(0,0,1) a_x(-0.371, -0.929, 0)] MAT107 }
+{ "107" [Ellipt_Cyl: x= 64.0mm y=  -2.0mm z=0mm dx= 28.0mm dy=12.0mm l=100mm achse(0,0,1) a_x( 0.019, -1.000, 0)] MAT107 }
+{ "28"  [Ellipt_Cyl: x=  0.0mm y=-116.0mm z=0mm dx= 34.0mm dy=18.0mm l=100mm achse(0,0,1) a_x(-0.531, -0.847, 0)] MAT28 }
+{ "29"  [Ellipt_Cyl: x=  0.0mm y=-116.0mm z=0mm dx= 32.0mm dy=16.0mm l=100mm achse(0,0,1) a_x(-0.531, -0.847, 0)] MAT29 }
+{ "28"  [Ellipt_Cyl: x=  6.0mm y= 114.0mm z=0mm dx= 34.0mm dy=16.0mm l=100mm achse(0,0,1) a_x( 0.548, -0.836, 0)] MAT28 }
+{ "29"  [Ellipt_Cyl: x=  6.0mm y= 114.0mm z=0mm dx= 32.0mm dy=14.0mm l=100mm achse(0,0,1) a_x( 0.548, -0.836, 0)] MAT29 }
+{ "41"  [Ellipt_Cyl: x=-24.0mm y= -54.0mm z=0mm dx= 12.0mm dy=20.0mm l=100mm achse(0,0,1) a_x( 0.000, -1.000, 0)] MAT41 }
+{ "42"  [Ellipt_Cyl: x=-24.0mm y= -54.0mm z=0mm dx=  8.0mm dy=16.0mm l=100mm achse(0,0,1) a_x( 0.000, -1.000, 0)] MAT42 }
+{ "41"  [Ellipt_Cyl: x=-22.0mm y=  56.0mm z=0mm dx= 12.0mm dy=20.0mm l=100mm achse(0,0,1) a_x( 0.000, -1.000, 0)] MAT41 }
+{ "42"  [Ellipt_Cyl: x=-22.0mm y=  56.0mm z=0mm dx=  8.0mm dy=16.0mm l=100mm achse(0,0,1) a_x( 0.000, -1.000, 0)] MAT42 }
+{ "41"  [Ellipt_Cyl: x= 44.0mm y= -16.0mm z=0mm dx= 16.0mm dy= 8.0mm l=100mm achse(0,0,1) a_x(-0.841, -0.540, 0)] MAT41 }
+{ "41"  [Ellipt_Cyl: x= 44.0mm y=  10.0mm z=0mm dx= 16.0mm dy= 8.0mm l=100mm achse(0,0,1) a_x( 0.783, -0.622, 0)] MAT41 }
+{ "41"  [Ellipt_Cyl: x= 44.0mm y=  -2.0mm z=0mm dx= 12.0mm dy= 5.0mm l=100mm achse(0,0,1) a_x( 0.000, -1.000, 0)] MAT41 }
+{ "42"  [Ellipt_Cyl: x= 44.0mm y= -16.0mm z=0mm dx= 14.0mm dy= 6.0mm l=100mm achse(0,0,1) a_x(-0.841, -0.540, 0)] MAT42 }
+{ "42"  [Ellipt_Cyl: x= 44.0mm y=  10.0mm z=0mm dx= 14.0mm dy= 6.0mm l=100mm achse(0,0,1) a_x( 0.783, -0.622, 0)] MAT42 }
+{ "42"  [Ellipt_Cyl: x= 44.0mm y=  -2.0mm z=0mm dx= 10.0mm dy= 3.0mm l=100mm achse(0,0,1) a_x( 0.000, -1.000, 0)] MAT42 }
+{ "115" [Ellipt_Cyl: x=  8.0mm y=   0.0mm z=0mm dx= 10.0mm dy=12.0mm l=100mm achse(0,0,1) a_x( 0.000, -1.000, 0)] MAT115 }

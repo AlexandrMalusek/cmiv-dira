@@ -1,7 +1,7 @@
-%% Plot results of two-material decomposition
-% (two mass fraction maps and one mass density map)
-%
 function [] = plotWei2Dens(Wei2, dens, names)
+  % plotWei2Dens Plot results of two-material decomposition
+  %
+  % Plot two mass fraction maps and one mass density map
   
   if nargin < 3
     names{1} = 'Material 1';

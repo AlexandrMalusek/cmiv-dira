@@ -1,6 +1,5 @@
-%% Three-material decomposition in DECT.
-%
 function [w] = MD3SP(uxl, uxh, att, dens)
+  % MD3SP Three-material decomposition in DECT.
   %
   % Non-matrix version of MD3. Parameters uxl and uxh are scalars.
   %

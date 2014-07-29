@@ -1,6 +1,7 @@
-%% Plot reconstructed images (maps of linear attenuation coefficients)
-%
 function [] = plotPolyImgs(recLow, recHigh, iter)
+  % plotPolyImgs Plot reconstructed images
+  %
+  % Plot maps of linear attenuation coefficients
 
   % Scaling for plottning
   minLow = 17;

@@ -1,11 +1,11 @@
 function q = ramp(g, dalfa)
-%
-% q = ramp(g, dalfa)
-% rampfilter the columns of g
-%  g:       input to be filtered
-%  dalfa:   angle between the rays
-%
-%  w = cos(pi*(-M2:M2)'/(2*M2)).^2; % low pass weighting
+  % q = ramp(g, dalfa)
+ 
+  % rampfilter the columns of g
+  %  g:       input to be filtered
+  %  dalfa:   angle between the rays
+  %
+  %  w = cos(pi*(-M2:M2)'/(2*M2)).^2; % low pass weighting
 
   [M,N] = size(g);
 
@@ -21,22 +21,18 @@ function q = ramp(g, dalfa)
   end
   
   w = cos(pi*(-M2:M2)'/(2*M2)).* cos(pi*(-M2:M2)'/(2*M2)); % low pass weighting
-  %w(:,:) = 1;
-  R = (w(1:end-1) .* fftshift(fft(ifftshift(r))))*ones(1,N);
-%  R = fftshift(fft(ifftshift(r))) * ones(1,N);
-  
+    R = (w(1:end-1) .* fftshift(fft(ifftshift(r))))*ones(1,N);
+    
   q = zpadcol(g,2*M2);
   q = real(fftshift(ifft(ifftshift (R.*fftshift(fft(ifftshift(q)))))));
   q = zpadcol(q,M);
- 
-
-
+end
 
 function y = zpadcol(x,m2)
-%
-% y = zpadcol(x,m2)
-% pad or unpad
-%
+  %
+  % y = zpadcol(x,m2)
+  % pad or unpad
+  %
   
   [m,n] = size(x);
 
@@ -51,3 +47,4 @@ function y = zpadcol(x,m2)
   else
     y = x(offset+1:offset+m2,:);
   end
+end

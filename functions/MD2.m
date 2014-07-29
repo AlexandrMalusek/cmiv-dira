@@ -1,6 +1,5 @@
-%% Two-material decomposition in DECT.
-%
 function [Wei2, dens] = MD2(AttE1mat, AttE2mat, Att2, Dens2, mask)
+  % TMD2 wo-material decomposition in DECT.
   %
   % Input:
   % AttE1mat: matrix of measured LACs at effective energy E1

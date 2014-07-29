@@ -1,13 +1,13 @@
-%% Three-material decomposition in DECT
-%
-function [Wei3] = MD3(AttE1mat, AttE2mat, Att3, Dens3, mask)
+function [Wei3] = MD3(AttE1mat, AttE2mat, Att3, Dens3, mask, isSpecial)
+  % MD3 Three-material decomposition in DECT
   %
   % Input:
-  % AttE1mat: matrix of measured LACs at effective energy E1
-  % AttE2mat: matrix of measured LACs at effective energy E2
-  % Att3:     tabulated LACs of triplet base materials at E1 and E2
-  % Dens3:    mass density of triplet base materials
-  % mask:     mask defining the tissue to be decomposed
+  % AttE1mat:  matrix of measured LACs at effective energy E1
+  % AttE2mat:  matrix of measured LACs at effective energy E2
+  % Att3:      tabulated LACs of triplet base materials at E1 and E2
+  % Dens3:     mass density of triplet base materials
+  % mask:      mask defining the tissue to be decomposed
+  % isSpecial: different treatment at a vacuum-tissue border
   %
   % Output:
   % Wei3:     3 matrices of mass fractions
@@ -46,21 +46,26 @@ function [Wei3] = MD3(AttE1mat, AttE2mat, Att3, Dens3, mask)
   for k = 1:imgSize(1)
     for l = 1:imgSize(2)
       if mask(k, l) == 1
-        M = [ (AttE1mat(k, l) - Att3(1, 1))/Dens3(1) - ...
-          (AttE1mat(k, l) - Att3(1, 3)) / Dens3(3), ...
-          (AttE1mat(k, l) - Att3(1, 2)) / Dens3(2) - ...
-          (AttE1mat(k, l) - Att3(1, 3)) / Dens3(3); ...
-          (AttE2mat(k, l) - Att3(2, 1)) / Dens3(1) - ...
-          (AttE2mat(k, l) - Att3(2, 3)) / Dens3(3), ...
-          (AttE2mat(k, l) - Att3(2, 2)) / Dens3(2) - ...
-          (AttE2mat(k, l) - Att3(2, 3)) / Dens3(3)  ];
-        b = (- [(AttE1mat(k, l) - Att3(1, 3)) / Dens3(3); ...
-          (AttE2mat(k, l) - Att3(2, 3)) / Dens3(3)]);
-        w = M \ b;
+        if isSpecial==0 || (AttE1mat(k, l)>=Att3(1, 1) && AttE2mat(k, l)>=Att3(2, 1))
+          M = [ (AttE1mat(k, l) - Att3(1, 1))/Dens3(1) - ...
+            (AttE1mat(k, l) - Att3(1, 3)) / Dens3(3), ...
+            (AttE1mat(k, l) - Att3(1, 2)) / Dens3(2) - ...
+            (AttE1mat(k, l) - Att3(1, 3)) / Dens3(3); ...
+            (AttE2mat(k, l) - Att3(2, 1)) / Dens3(1) - ...
+            (AttE2mat(k, l) - Att3(2, 3)) / Dens3(3), ...
+            (AttE2mat(k, l) - Att3(2, 2)) / Dens3(2) - ...
+            (AttE2mat(k, l) - Att3(2, 3)) / Dens3(3)  ];
+          b = (- [(AttE1mat(k, l) - Att3(1, 3)) / Dens3(3); ...
+            (AttE2mat(k, l) - Att3(2, 3)) / Dens3(3)]);
+          w = M \ b;
         
-        Wei3(k, l, 1) = w(1);
-        Wei3(k, l, 2) = w(2);
-        Wei3(k, l, 3) = 1 - w(1) - w(2);
+          Wei3(k, l, 1) = w(1);
+          Wei3(k, l, 2) = w(2);
+          Wei3(k, l, 3) = 1 - w(1) - w(2);
+        else
+          Wei3(k, l, 1) = (AttE1mat(k, l)/Att3(1, 1) +  ...
+            AttE2mat(k, l)/Att3(2, 1))/2;
+        end
       end
     end
   end

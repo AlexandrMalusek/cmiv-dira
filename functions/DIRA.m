@@ -12,22 +12,25 @@
 
 %% CT scan geometry and Joseph metod
 % ------------------------------------
-gLen = smd.alpha * pi/ 180;      % detector arc length [rad]
 
 % Rebinning of fan beam data
 %---------------------------
-gamma = atan(0.5*gLen/smd.L);    % first angle after rebinning [rad]
-firstang = gamma;                % first angle after rebinning [rad]
+firstang = smd.gamma;            % first angle after rebinning [rad]
 
 % Init data for Joseph projection generation
 % ------------------------------------------
 Nr = smd.N1;                     % number of detector elements
-Nphi = size(pmd.projLow, 2);         % number of projection angles after rebinning
+Nphi = size(pmd.projLow, 2);     % number of projection angles after rebinning
 degLen = 180; 		         % angular interval in degrees
 pixsiz = smd.dt1;                % pixel size
 Nr2 = 2*floor((Nr-1)/2)+1;       % resolution of detector elements
-degVec = ((0:-1:(-Nphi+1))*(degLen/Nphi))- gamma * 180/pi;
+degVec = ((0:-1:(-Nphi+1))*(degLen/Nphi))- smd.gamma * 180/pi;
 r2Vec  = (-(Nr2-1)/2:1:(Nr2-1)/2);
+
+% Initialization of circular reconstruction area mask
+% ---------------------------------------------------
+[x,y] = meshgrid(r2Vec,r2Vec);
+smd.mask = (x.^2 + y.^2) <= ((Nr2-1)/2)^2;
 
 % Compute I0 for both spectra
 % --------------------------
@@ -84,7 +87,7 @@ if pmd.p3MD
   Wei3 = cell(length(tissue3), 1);
   for i = 1:length(tissue3)
     Wei3{i} = MD3(AttE1mat, AttE2mat, pmd.Att3{pmd.tissueOrder3(i)},...
-      pmd.Dens3{pmd.tissueOrder3(i)}, tissue3{i});
+      pmd.Dens3{pmd.tissueOrder3(i)}, tissue3{i}, 1);
   end
 end
 
@@ -250,7 +253,7 @@ for iter = 1:pmd.numbiter
   if pmd.p3MD
     Wei3 = cell(length(tissue3), 1);
     for i = 1:length(tissue3)
-      Wei3{i} = MD3(AttE1mat, AttE2mat, pmd.Att3{pmd.tissueOrder3(i)}, pmd.Dens3{pmd.tissueOrder3(i)}, tissue3{i});
+      Wei3{i} = MD3(AttE1mat, AttE2mat, pmd.Att3{pmd.tissueOrder3(i)}, pmd.Dens3{pmd.tissueOrder3(i)}, tissue3{i}, 1);
     end
   end
   
@@ -274,8 +277,8 @@ end
 
 %% Add material decomposition of prostate to resulting data.
 %
-pmd.Wei3SA{1} = MD3(AttE1mat, AttE2mat, pmd.Att3SA, pmd.Dens3SA, pmd.maskSA);
-plotWei3(pmd.Wei3SA);
+pmd.Wei3SA{1} = MD3(AttE1mat, AttE2mat, pmd.Att3SA, pmd.Dens3SA, pmd.maskSA, 1);
+plotWei3(pmd.Wei3SA, pmd.name3SA);
 pmd.WeiAv = MD3SP(mean(AttE1mat(pmd.maskSA)), mean(AttE2mat(pmd.maskSA)), pmd.Att3SA, pmd.Dens3SA);
 fprintf('Average mass fraction m1 = %f, m2 = %f and m3 = %f\n', pmd.WeiAv);
 
