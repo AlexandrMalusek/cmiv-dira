@@ -26,7 +26,6 @@ smd.NLow = spectra.currSpectLow(1:75, 2);
 smd.EHigh = spectra.currSpectHigh(1:135, 1);
 smd.NHigh = spectra.currSpectHigh(1:135, 2);
 smd.L = 0.595;            % distance source - rot. center in m
-smd.alpha = 38.4;         % fanbeam angle in deg
 smd.N1 = 511;             % number of detector elements after rebinning
 smd.dt1 = 0.402298392584693/(smd.N1+1); % detector element size
 smd.interpolation = 2;    % Joseph projection generation
@@ -36,7 +35,7 @@ smd.fact = 4;             % factor for no rebinned projections
 smd.dfi0 = 228 / smd.M0;  % angle increment in degrees
 smd.dfi1 = 1 / smd.fact;  % new angle increment in degrees
 smd.M1 = 180 * smd.fact;  % new nr of projections
-smd.dt0 = (smd.alpha * pi / 180) / smd.N0;  % Detector element arc length [rad]
+smd.dt0 = (38.4 * pi / 180) / smd.N0;  % Detector element arc length [rad]
 smd.gamma = atan(smd.N0 / 2 * smd.dt0 / smd.L);  % First angle after rebinning [rad]
 
 sinograms = load(sinogramsFileName);
@@ -130,19 +129,22 @@ pmd.Att3{1}(:, 3) = [pmd.Dens3{1}(3) * CalculateMAC(waterStr, pmd.eEL),...
 mu3Low{1}(:, 3) = pmd.Dens3{1}(3) * CalculateMACs(waterStr, 1:smd.eL);
 mu3High{1}(:, 3) = pmd.Dens3{1}(3) * CalculateMACs(waterStr, 1:smd.eH);
 
-% Tissue 3
+% post-processing triplet
+pmd.name3SA{1} = 'prostate';
 pmd.Dens3SA(1) = prostDens;
 pmd.Att3SA(:, 1) = [pmd.Dens3SA(1) * CalculateMAC(prostStr, pmd.eEL),...
   pmd.Dens3SA(1) * CalculateMAC(prostStr, pmd.eEH)];
 pmd.mu3LowSA(:, 1) = pmd.Dens3SA(1) * CalculateMACs(prostStr, 1:smd.eL);
 pmd.mu3HighSA(:, 1) = pmd.Dens3SA(1) * CalculateMACs(prostStr, 1:smd.eH);
 
+pmd.name3SA{2} = 'water';
 pmd.Dens3SA(2) = waterDens;
 pmd.Att3SA(:, 2) = [pmd.Dens3SA(2) * CalculateMAC(waterStr, pmd.eEL),...
   pmd.Dens3SA(2) * CalculateMAC(waterStr, pmd.eEH)];
 pmd.mu3LowSA(:, 2) = pmd.Dens3SA(2) * CalculateMACs(waterStr, 1:smd.eL);
 pmd.mu3HighSA(:, 2) = pmd.Dens3SA(2) * CalculateMACs(waterStr, 1:smd.eH);
 
+pmd.name3SA{3} = 'calcium';
 pmd.Dens3SA(3) = caDens;
 pmd.Att3SA(:, 3) = [pmd.Dens3SA(3) * CalculateMAC(caStr, pmd.eEL),...
   pmd.Dens3SA(3) * CalculateMAC(caStr, pmd.eEH)];
