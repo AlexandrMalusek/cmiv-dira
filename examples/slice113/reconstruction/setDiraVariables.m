@@ -15,16 +15,10 @@ sinogramsBhFileName = 'sinogramsBH.mat';
 spectraFileName = 'spectra.mat';
 prostateMaskFileName = 'prostateMask.mat';
 
-spectra =  load(spectraFileName);
-
 %% Scanner model data
 smd = ScannerModelData;
 smd.eL = 80;              % low x-ray tube voltage in kV
 smd.eH = 140;             % high x-ray tube voltage in kV
-smd.ELow = spectra.currSpectLow(1:75, 1);
-smd.NLow = spectra.currSpectLow(1:75, 2);
-smd.EHigh = spectra.currSpectHigh(1:135, 1);
-smd.NHigh = spectra.currSpectHigh(1:135, 2);
 smd.L = 0.595;            % distance source - rot. center in m
 smd.N1 = 511;             % number of detector elements after rebinning
 smd.dt1 = 0.402298392584693/(smd.N1+1); % detector element size
@@ -58,6 +52,12 @@ pmd.p3MD = 1;         % using 3MS.
 if ~pSetMaterialData
   return
 end
+
+spectra =  load(spectraFileName);
+smd.ELow = spectra.currSpectLow(1:75, 1);
+smd.NLow = spectra.currSpectLow(1:75, 2);
+smd.EHigh = spectra.currSpectHigh(1:135, 1);
+smd.NHigh = spectra.currSpectHigh(1:135, 2);
 
 %% Elemental material composition (number of atoms per molecule) and
 % mass density (in g/cm^3).
