@@ -2,29 +2,39 @@
 % Compute polychromatic and monocromatic curves for water beamhardening
 % (Based on a program by Arif Muhammad.)
 % Maria 2012-02-14
-% Updated by Maria 2013-10-25
+% Updated by Maria 2013-10-25 (larger WBHC tables)
+% Updated by Maria 2014-07-22 (drasim spectra)
 %======================================================================
 
-% Read spectra and water attenuation data and save to matrix
-%-----------------------------------------------------------
+%% Read spectra
+%% ------------
+load spectra_slice113B.mat
+spect = zeros(136,2);
+spect(:,1) = currSpectHigh(1:136,1);
+spect(:,2) = currSpectHigh(1:136,2);
+
+% Read water attenuation data
+%----------------------------
 Wdens = 1; % water density
-load siemens80.mat
 load water.mat
-F = zeros(80,3);
-F(:,1) = 1:80;
+
+% Save to matrix
+%---------------
+F = zeros(140,3);
+F(:,1) = 1:140;
 k = 1;
 pos = 1;
-while abs(siemens80(pos,1)- k) > 0.1
+while abs(spect(pos,1)- k) > 0.1
   k = k + 1;
 end
-while (k < 81)
-  F(k,2) = siemens80(pos,2);
+while (k < 141)
+  F(k,2) = spect(pos,2);
   k = k + 1;
   pos = pos + 1;
 end 
 k = 1;
 pos = 1;
-while (k < 81)
+while (k < 141)
   while abs(1000 * f(pos,1)- k) > 0.1
     pos = pos + 1;
   end
@@ -38,34 +48,34 @@ figure(2)
 subplot(1,3,1), plot(F(:,1),100*Wdens*F(:,3)) 
 title('attenuation coefficient')
 xlabel('E [keV]'); ylabel('\mu(E) [1/m]');
-axis([10 80 0 100])
+axis([10 140 0 100])
 grid
 subplot(1,3,2),plot(F(:,1),F(:,2))
 title('Spectrum')
-xlabel('E [keV]'), ylabel('N(E)'),
-axis([10 80 0 25000]),grid
+xlabel('E [keV]'), ylabel('N(E)')
+xlim([10 140]), grid
 
 % Some initializations
 %---------------------
-E    = F(:,1);          % spectrum energies 0-80(kev)   
+E    = F(:,1);          % spectrum energies 0-140(kev)   
 N    = F(:,2);          % number of photons
 mukV = F(:,3);          % attenuation coefficient, diff kV
-I    = zeros(1,45);     % initialize intensity at detector
-IkV  = zeros(1,79);     % initialize intensity at detector, diff KV
+I    = zeros(1,100);    % initialize intensity at detector
+IkV  = zeros(1,139);    % initialize intensity at detector, diff KV
 
 % Compute incoming intensity
 %---------------------------
 IkV = 0*IkV;
-for k = 2:79
+for k = 2:139
   IkV(k) = E(k) * N(E(k)) * (E(k+1) - E(k-1));
 end
 I0 = sum(IkV)/2;
   
-% Loop over different distances (1-45cm) and 
+% Loop over different distances (1-100cm) and 
 % compute intensity at detector
-%-------------------------------------------
+%--------------------------------------------
 for dist = 1:100;
-  for k = 2:79;
+  for k = 2:139;
     IkV(k) = E(k) * N(E(k)) * exp(-mukV(E(k))*dist) * (E(k+1) - E(k-1));
   end
   I(dist) = sum(IkV)/2;
@@ -74,8 +84,8 @@ end
 % Compute effective attenuation coefficient 
 % (according to Arif o Maria)  
 %------------------------------------------
-mu_E = zeros(1,79);
-for k = 2:79;     
+mu_E = zeros(1,139);
+for k = 2:139;     
   mu_E(k) = E(k) * N(E(k)) * mukV(E(k)) * (E(k+1) - E(k-1));
 end
 muEff = sum(mu_E)/(2*I0);
@@ -92,5 +102,5 @@ ylabel('line integral');
 legend('polychromatic','monochromatic')
 grid;
 
-save polycr80 polycr
-save muEff80 muEff
+save polycr140Sn polycr
+save muEff140Sn muEff
