@@ -9,7 +9,6 @@ disp('Loading data and initializing variables...')
 tic
 
 % Names of files
-resultsFileName = 'results.mat';
 sinogramsFileName = 'sinograms.mat';
 sinogramsBhFileName = 'sinogramsBH.mat';
 spectraFileName = 'spectra.mat';
@@ -32,18 +31,11 @@ smd.M1 = 180 * smd.fact;  % new nr of projections
 smd.dt0 = (38.4 * pi / 180) / smd.N0;  % Detector element arc length [rad]
 smd.gamma = atan(smd.N0 / 2 * smd.dt0 / smd.L);  % First angle after rebinning [rad]
 
-sinograms = load(sinogramsFileName);
-sinogramsBH = load(sinogramsBhFileName);
-
 % Phantom model data
 pmd = PhantomModelData;
 pmd.numbiter = 4;     % Number of iterations.
 pmd.eEL = 50.0;       % low effective energy in keV
 pmd.eEH = 88.5;       % high effective energy in keV
-pmd.projLow = sinograms.projLow;
-pmd.projHigh = sinograms.projHigh;
-pmd.projLowBH = sinogramsBH.projLowBH;
-pmd.projHighBH = sinogramsBH.projHighBH;
 pmd.p2MD = 1;         % using 2MD.
 pmd.p3MD = 1;         % using 3MS.
 
@@ -58,6 +50,14 @@ smd.ELow = spectra.currSpectLow(1:75, 1);
 smd.NLow = spectra.currSpectLow(1:75, 2);
 smd.EHigh = spectra.currSpectHigh(1:135, 1);
 smd.NHigh = spectra.currSpectHigh(1:135, 2);
+
+sinograms = load(sinogramsFileName);
+pmd.projLow = sinograms.projLow;
+pmd.projHigh = sinograms.projHigh;
+
+sinogramsBH = load(sinogramsBhFileName);
+pmd.projLowBH = sinogramsBH.projLowBH;
+pmd.projHighBH = sinogramsBH.projHighBH;
 
 %% Elemental material composition (number of atoms per molecule) and
 % mass density (in g/cm^3).
