@@ -57,30 +57,12 @@ classdef PhantomModelData < handle
       ylabel('LAC (1/m)')
     end
 
-    function PlotRecLac(pmd, iter)
+    function PlotRecLacImages(pmd, iter)
       % Plot reconstructed images (maps of LACs)
       %
       % iter: iteration number (0, ...)
 
-      % Scaling for plottning
-      minLow = 17;
-      maxLow = 33;
-      minHigh = 15;
-      maxHigh = 23;
-  
-      figure();
-      hold off;
-      subplot(1,2,1);
-      imagesc(pmd.recLowSet{iter+1}, [minLow maxLow]);
-      axis image; colorbar('horiz'); axis off;
-      title(sprintf('LAC (1/m), E=%.1f keV, Ni=%d', pmd.eEL, iter), 'fontsize', 11);
-      colormap('gray');
-      
-      subplot(1,2,2);
-      imagesc(pmd.recHighSet{iter+1}, [minHigh maxHigh]);
-      axis image; colorbar('horiz'); axis off;
-      title(sprintf('LAC (1/m), E=%.1f keV, Ni=%d', pmd.eEH, iter), 'fontsize', 11);
-      colormap('gray');
+      plotRecLacImages(pmd.recLowSet{iter+1}, pmd.eEL, pmd.recHighSet{iter+1}, pmd.eEH, iter);
     end
 
     function PlotMassFractionsFromMd3(pmd, iter)
@@ -177,6 +159,36 @@ classdef PhantomModelData < handle
       end
       hold off;
     end
+
+    function cn = GetCondNumMdL3(pmd)
+      % Return condition number of MD3 using LACs to get volume fractions.
+      % Compute the condition number for each triplet.
+
+      for i = 1:length(pmd.Att3)
+	Av = zeros(3,3);           % System matrix for volume fractions
+	Av(1:2,:) = pmd.Att3{i};
+	Av(3,:) = [1 1 1];
+	cn(i) = cond(Av);
+	fprintf('Condition number for triplet (%s, %s, %s) = %g\n',...
+          char(pmd.name3{i}(1)), char(pmd.name3{i}(2)), char(pmd.name3{i}(3)), cn(i));
+      end
+    end
+
+    function cn = GetCondNumMdM3(pmd)
+      % Return condition number of MD3 using MACs to get mass fractions.
+      % Compute the condition number for each triplet.
+
+      for i = 1:length(pmd.Att3)
+	Am = zeros(3,3);           % System matrix for mass fractions
+	Am(1,:) = pmd.Att3{i}(1,:) ./ pmd.Dens3{i};
+	Am(2,:) = pmd.Att3{i}(2,:) ./ pmd.Dens3{i};
+	Am(3,:) = [1 1 1];
+	cn(i) = cond(Am);
+	fprintf('Condition number for triplet (%s, %s, %s) = %g\n',...
+          char(pmd.name3{i}(1)), char(pmd.name3{i}(2)), char(pmd.name3{i}(3)), cn(i));
+      end
+    end
+
   end % methods
 
 end % classdef
