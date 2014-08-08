@@ -61,7 +61,7 @@ pmd.recHighSet = cell(pmd.numbiter+1, 1);
 pmd.recLowSet{1} = phm1;
 pmd.recHighSet{1} = phm2;
 
-pmd.PlotRecLac(0);
+pmd.PlotRecLacImages(0);
 drawnow();
 
 %% Inital Tissue segmentation
@@ -225,7 +225,7 @@ for iter = 1:pmd.numbiter
   pmd.recHighSet{iter+1} = recHigh;
   
   if iter == pmd.numbiter
-    pmd.PlotRecLac(iter);
+    pmd.PlotRecLacImages(iter);
     drawnow();
   end
   
