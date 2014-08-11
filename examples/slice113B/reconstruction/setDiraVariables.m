@@ -32,7 +32,7 @@ smd.gamma = atan(smd.N0 / 2 * smd.dt0 / smd.L);  % First angle after rebinning [
 
 % Phantom model data
 pmd = PhantomModelData;
-pmd.numbiter = 4;     % Number of iterations.
+pmd.savedIter = [0, 1, 2, 4]; % save data for these iterations
 pmd.eEL = 50.0;       % low effective energy in keV
 pmd.eEH = 88.5;       % high effective energy in keV
 pmd.p2MD = 1;         % using 2MD.

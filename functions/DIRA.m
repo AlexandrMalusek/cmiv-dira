@@ -9,6 +9,9 @@
 % Updated 2014-07-10 by Alexandr Malusek
 % #################################################################
 
+% Get the number of iterations
+pmd.savedIter = sort(pmd.savedIter);             % sort the vector
+numbIter = pmd.savedIter(length(pmd.savedIter)); % get the last element 
 
 %% CT scan geometry and Joseph metod
 % ------------------------------------
@@ -53,13 +56,16 @@ pmd.projHigh = rampWindowForMeasuredProjections(pmd.projHigh, r2Vec);
 %
 fprintf('\nStarting initial reconstruction...\n')
 
+pmd.curIterIndex = 1;
 phm1 = reconstructMeasuredProjections(pmd.projLowBH, r2Vec, degVec, smd.N1, smd.dt1);
 phm2 = reconstructMeasuredProjections(pmd.projHighBH, r2Vec, degVec, smd.N1, smd.dt1);
 
-pmd.recLowSet = cell(pmd.numbiter+1, 1);
-pmd.recHighSet = cell(pmd.numbiter+1, 1);
-pmd.recLowSet{1} = phm1;
-pmd.recHighSet{1} = phm2;
+nSavedIter = length(pmd.savedIter);  % Number of saved iterations
+pmd.recLowSet = cell(nSavedIter, 1);
+pmd.recHighSet = cell(nSavedIter, 1);
+
+pmd.recLowSet{pmd.curIterIndex} = phm1;
+pmd.recHighSet{pmd.curIterIndex} = phm2;
 
 pmd.PlotRecLacImages(0);
 drawnow();
@@ -91,15 +97,15 @@ if pmd.p3MD
   end
 end
 
-pmd.densSet = cell(pmd.numbiter+1, 1);
-pmd.Wei2Set = cell(pmd.numbiter+1, 1);
-pmd.Wei3Set = cell(pmd.numbiter+1, 1);
+pmd.densSet = cell(nSavedIter, 1);
+pmd.Wei2Set = cell(nSavedIter, 1);
+pmd.Wei3Set = cell(nSavedIter, 1);
 if pmd.p2MD
-  pmd.densSet{1} = dens;
-  pmd.Wei2Set{1} = Wei2;
+  pmd.densSet{pmd.curIterIndex} = dens;
+  pmd.Wei2Set{pmd.curIterIndex} = Wei2;
 end
 if pmd.p3MD
-  pmd.Wei3Set{1} = Wei3;
+  pmd.Wei3Set{pmd.curIterIndex} = Wei3;
 end
 
 if pmd.p2MD
@@ -112,8 +118,8 @@ drawnow();
 
 %% Iterate
 %
-iterno = pmd.numbiter;
-for iter = 1:pmd.numbiter
+iterno = numbIter;
+for iter = 1:numbIter
   % Projection generation with Joseph
   %----------------------------------
   % For every 2 or 3 MD added this part have to be extended with a loop
@@ -121,7 +127,13 @@ for iter = 1:pmd.numbiter
   % polychromatic concatination.
   
   fprintf('\nStarting iteration %d...\n', iter);
-  
+
+  % If the previous iteration is to be saved then increment the iteration index.
+  % Otherwise the current iteration will overwrite the data of the previous iteration.
+  if GetIterIndex(iter-1) > 0
+     pmd.curIterIndex = pmd.curIterIndex + 1;
+  end
+
   disp('Calculating line integrals...')
   
   if pmd.p2MD
@@ -224,7 +236,7 @@ for iter = 1:pmd.numbiter
   pmd.recLowSet{iter+1} = recLow;
   pmd.recHighSet{iter+1} = recHigh;
   
-  if iter == pmd.numbiter
+  if iter == numbIter
     pmd.PlotRecLacImages(iter);
     drawnow();
   end
@@ -258,13 +270,13 @@ for iter = 1:pmd.numbiter
   end
   
   if pmd.p2MD
-    pmd.densSet{iter+1} = dens;
-    pmd.Wei2Set{iter+1} = Wei2;
+    pmd.densSet{pmd.curIterIndex} = dens;
+    pmd.Wei2Set{pmd.curIterIndex} = Wei2;
   end
   if pmd.p3MD
-    pmd.Wei3Set{iter+1} = Wei3;
+    pmd.Wei3Set{pmd.curIterIndex} = Wei3;
   end
-  if iter == pmd.numbiter
+  if iter == numbIter
     if pmd.p2MD
       pmd.PlotMassFractionsFromMd2(iter);
     end
@@ -281,6 +293,8 @@ pmd.Wei3SA{1} = MD3(AttE1mat, AttE2mat, pmd.Att3SA, pmd.Dens3SA, pmd.maskSA, 1);
 plotWei3(pmd.Wei3SA, pmd.name3SA);
 pmd.WeiAv = MD3SP(mean(AttE1mat(pmd.maskSA)), mean(AttE2mat(pmd.maskSA)), pmd.Att3SA, pmd.Dens3SA);
 fprintf('Average mass fraction m1 = %f, m2 = %f and m3 = %f\n', pmd.WeiAv);
+
+pmd.curIterIndex = -1; % This state variable indicates the end of DIRA.
 
 %% Save results
 save('pmd.mat', 'pmd');

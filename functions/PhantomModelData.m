@@ -1,7 +1,7 @@
 % Nd: number of detector elements
 % Np: number of projections
 % Nr: reconstructed image size is Nr x Nr
-% Ni: number of iterations
+% Ni: number of saved iterations
 % Ncl: number of channels of Ul spectrum 
 % Nch: number of channels of Uh spectrum
 % Nt2: number of material doublets
@@ -9,7 +9,8 @@
 
 classdef PhantomModelData < handle
   properties
-    numbiter      % number of iterations
+    savedIter     % vector of saved-iteration indices
+    curIterIndex  % current iteration index (iternal state variable)
     eEL           % low effective energy in keV
     eEH           % high effective energy in keV
     % Projections and reconstructed images
@@ -49,6 +50,23 @@ classdef PhantomModelData < handle
   end
 
   methods
+    function ii = GetIterIndex(pmd, iter)
+      % If DIRA is running (curIterIndex > 0) then return pmd.curIterIndex.
+      % Otherwise (interactive use) return proper iterIndex position or -1. 
+
+      if pmd.curIterIndex > 0
+	 ii = pmd.curIterIndex;
+      else
+	ii =  find(pmd.savedIter == iter);
+	if isempty(ii)
+	  ii = -1;
+	  fprintf('Error: GetIterIndex(): Iteration %d was not saved.\n', iter);
+	  fprintf('Saved iterations are: ');
+	  disp(pmd.savedIter);
+	end
+      end
+    end
+
     function PlotMu(pmd, varargin)
       % Plot energy spectra
       semilogy(pmd.muHigh, '+-', varargin{:})
@@ -62,7 +80,8 @@ classdef PhantomModelData < handle
       %
       % iter: iteration number (0, ...)
 
-      plotRecLacImages(pmd.recLowSet{iter+1}, pmd.eEL, pmd.recHighSet{iter+1}, pmd.eEH, iter);
+      iterIndex = pmd.GetIterIndex(iter);
+      plotRecLacImages(pmd.recLowSet{iterIndex}, pmd.eEL, pmd.recHighSet{iterIndex}, pmd.eEH, iter);
     end
 
     function PlotMassFractionsFromMd3(pmd, iter)
@@ -70,21 +89,23 @@ classdef PhantomModelData < handle
       %
       % iter: iteration number (0, ...)
 
+      iterIndex = pmd.GetIterIndex(iter);
+
       % Define a colormap
       jettmp = colormap(jet(128+32));
       jetmod = jettmp(1+16:128+16,:);
       jetmod(1,:) = jettmp(1,:); 
       jetmod(128,:) = jettmp(128+32,:); 
 
-      for i = 1:length(pmd.Wei3Set{iter+1})
+      for i = 1:length(pmd.Wei3Set{iterIndex})
 	figure()
         hold off;
         colormap(jetmod);
-	subplot(1,3,1), imagesc(100 * pmd.Wei3Set{iter+1}{i}(:, :, 1), [-50 150]);
+	subplot(1,3,1), imagesc(100 * pmd.Wei3Set{iterIndex}{i}(:, :, 1), [-50 150]);
 	axis image; axis off; colorbar('SouthOutside'); title(pmd.name3{i}{1});
-	subplot(1,3,2), imagesc(100 * pmd.Wei3Set{iter+1}{i}(:, :, 2), [-50 150]);
+	subplot(1,3,2), imagesc(100 * pmd.Wei3Set{iterIndex}{i}(:, :, 2), [-50 150]);
 	axis image; axis off; colorbar('SouthOutside'); title(pmd.name3{i}{2});
-	subplot(1,3,3), imagesc(100 * pmd.Wei3Set{iter+1}{i}(:, :, 3), [-50 150]);
+	subplot(1,3,3), imagesc(100 * pmd.Wei3Set{iterIndex}{i}(:, :, 3), [-50 150]);
 	axis image; axis off; colorbar('SouthOutside'); title(pmd.name3{i}{3});
       end
     end
@@ -94,21 +115,23 @@ classdef PhantomModelData < handle
       %
       % iter: iteration number (0, ...)
 
+      iterIndex = pmd.GetIterIndex(iter);
+
       % Define a colormap
       jettmp = colormap(jet(128+32));
       jetmod = jettmp(1+16:128+16,:);
       jetmod(1,:) = jettmp(1,:); 
       jetmod(128,:) = jettmp(128+32,:); 
 
-      for i = 1:length(pmd.Wei2Set{iter+1})
+      for i = 1:length(pmd.Wei2Set{iterIndex})
 	figure()
         hold off
 	colormap(jetmod);
-	subplot(1,3,1), imagesc(100 * pmd.Wei2Set{iter+1}{i}(:, :, 1), [-50 150]);
+	subplot(1,3,1), imagesc(100 * pmd.Wei2Set{iterIndex}{i}(:, :, 1), [-50 150]);
 	axis image; axis off; colorbar('SouthOutside'); title(pmd.name2{i}{1});
-	subplot(1,3,2), imagesc(100 * pmd.Wei2Set{iter+1}{i}(:, :, 2), [-50 150]);
+	subplot(1,3,2), imagesc(100 * pmd.Wei2Set{iterIndex}{i}(:, :, 2), [-50 150]);
 	axis image; axis off; colorbar('SouthOutside'); title(pmd.name2{i}{2});
-	subplot(1,3,3), imagesc(pmd.densSet{iter+1}{1});
+	subplot(1,3,3), imagesc(pmd.densSet{iterIndex}{1});
 	axis image; axis off; colorbar('SouthOutside'); title('density (g/cm^3)');
       end
     end
@@ -116,8 +139,10 @@ classdef PhantomModelData < handle
     function [meanReg, stdReg] = meanAndStdInRegions(pmd, centerX, centerY, radius, color, iter)
       % meanAndStdInRegions
 
-      N0 = size(pmd.recLowSet{iter+1}, 1);  % image size of pixels
-      r2 = radius.^2;                       % radius squared
+      iterIndex = pmd.GetIterIndex(iter);
+
+      N0 = size(pmd.recLowSet{iterIndex}, 1);  % image size of pixels
+      r2 = radius.^2;                          % radius squared
 
       % Process each region separately
       for i = 1:length(radius)
@@ -137,7 +162,7 @@ classdef PhantomModelData < handle
       figure();
 
       % Image for Ul
-      subplot(1,2,1), imagesc(pmd.recLowSet{iter+1}, [14 30]);
+      subplot(1,2,1), imagesc(pmd.recLowSet{iterIndex}, [14 30]);
       hold on;
       axis image; axis off; colorbar('horiz');
       title(sprintf('LAC (1/m), E=%.1f keV, Ni=%d', pmd.eEL, iter), 'fontsize', 11);
@@ -149,7 +174,7 @@ classdef PhantomModelData < handle
       hold off;
       
       % Image for Uh
-      subplot(1,2,2), imagesc(pmd.recHighSet{iter+1}, [14 30]);
+      subplot(1,2,2), imagesc(pmd.recHighSet{iterIndex}, [14 30]);
       hold on;
       axis image; axis off; colorbar('horiz');
       title(sprintf('LAC (1/m), E=%.1f keV, Ni=%d', pmd.eEH, iter), 'fontsize', 11);
