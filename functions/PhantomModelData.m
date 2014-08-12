@@ -26,15 +26,17 @@ classdef PhantomModelData < handle
     Dens2         % {Nt2 x 1 cell}[1 x 2 double] tabulated mass density
     Att2          % {Nt2 x 1 cell}[2 x 2 double] tabulated LACs
     tissueOrder2  %
+    tissue2Set    % {Ni x 1 cell}{Nt2 x 1 cell}[Nr x Nr double] tissue masks for MD2
     densSet       % {Ni x 1 cell}
-    Wei2Set       % {Ni x 1 cell}[Nr x Nr double] calculated mass fractions
+    Wei2Set       % {Ni x 1 cell}[Nr x Nr x 2 double] calculated mass fractions
     % Three-material decomposition (MD3) data
     p3MD          % boolean, perform MD3?
     name3         % {Nt3 x 1 cell}
     Dens3         % {Nt3 x 1 cell}[1 x 3 double] tabulated mass density
     Att3          % {Nt3 x 1 cell}[2 x 3 double] tabulated LACs
     tissueOrder3  %
-    Wei3Set       % {Ni x 1 cell}[Nr x Nr double] calculated mass fractions
+    tissue3Set    % {Ni x 1 cell{Nt3 x 1 cell}[Nr x Nr double] tissue masks for MD3
+    Wei3Set       % {Ni x 1 cell}[Nr x Nr x 3 double] calculated mass fractions
     % Linear attenuation coefficients for MD2 and MD3
     muLow         % [Ncl x (Nt2+Nt3) double] LACs of doublets and triplets at spectrum energies
     muHigh        % [Nch x (Nt2+Nt3) double] LACs of doublets and triplets at spectrum energies
@@ -212,6 +214,140 @@ classdef PhantomModelData < handle
 	fprintf('Condition number for triplet (%s, %s, %s) = %g\n',...
           char(pmd.name3{i}(1)), char(pmd.name3{i}(2)), char(pmd.name3{i}(3)), cn(i));
       end
+    end
+
+    function cnMat = GetCondNumMdD3Map(pmd, tripletIndex, iter)
+      % Return the matrix of condition numbers corresponding to systems
+      % of equations used by DIRA.
+      %
+      % tripletIndex: triplet index (1, ..., Nt3)
+      % iter:         iteration number (0, ..., Ni)
+
+      ii = pmd.GetIterIndex(iter);           % iteration index
+      it =  tripletIndex;                    % triplet index
+      imgSize = size(pmd.recLowSet{ii});     % image size = matrix size
+      cnMat = zeros(imgSize(1), imgSize(2)); % matrix of condition numbers
+      for k = 1:imgSize(1)
+	for l = 1:imgSize(2)
+	  M = [(pmd.recLowSet{ii}(k, l)  - pmd.Att3{it}(1, 3)) / pmd.Dens3{it}(3) - ...
+               (pmd.recLowSet{ii}(k, l)  - pmd.Att3{it}(1, 1)) / pmd.Dens3{it}(1), ...
+               (pmd.recLowSet{ii}(k, l)  - pmd.Att3{it}(1, 3)) / pmd.Dens3{it}(3) - ...
+               (pmd.recLowSet{ii}(k, l)  - pmd.Att3{it}(1, 2)) / pmd.Dens3{it}(2); ...
+               (pmd.recHighSet{ii}(k, l) - pmd.Att3{it}(2, 3)) / pmd.Dens3{it}(3) - ...
+	       (pmd.recHighSet{ii}(k, l) - pmd.Att3{it}(2, 1)) / pmd.Dens3{it}(1), ...
+               (pmd.recHighSet{ii}(k, l) - pmd.Att3{it}(2, 3)) / pmd.Dens3{it}(3) - ...
+               (pmd.recHighSet{ii}(k, l) - pmd.Att3{it}(2, 2)) / pmd.Dens3{it}(2)];
+	  cnMat(k,l) = cond(M);
+	end
+      end
+    end
+
+    function PlotCondNumMdD3Map(pmd, tripletIndex, iter)
+      % Plot map of condition numbers corresponding to systems
+      % of equations used by DIRA. Tissue mask is used.
+
+      % Define a colormap
+      jettmp = colormap(jet(128+32));
+      jetmod = jettmp(1+16:128+16,:);
+      jetmod(1,:) = jettmp(1,:); 
+      jetmod(128,:) = jettmp(128+32,:); 
+
+      cnMat = pmd.GetCondNumMdD3Map(tripletIndex, iter);
+      figure();
+      colormap(jetmod);
+      ii = pmd.GetIterIndex(iter);  % iteration index
+      cnMat = cnMat .* pmd.tissue3Set{ii}{tripletIndex}; % apply the mask
+      imagesc(log10(cnMat));
+      axis image; axis off; colorbar('SouthOutside');
+      title(sprintf('log10(cond(A)), t=%d, i=%d', tripletIndex, iter));
+    end
+
+    function cnMat = GetCondNumMdD2Map(pmd, doubletIndex, iter)
+      % Return the matrix of condition numbers corresponding to systems
+      % of equations used by DIRA.
+      %
+      % doubletIndex: doublet index (1, ..., Nt2)
+      % iter:         iteration number (0, ..., Ni)
+
+      ii = pmd.GetIterIndex(iter);           % iteration index
+      id =  doubletIndex;                    % doublet index
+      imgSize = size(pmd.recLowSet{ii});     % image size = matrix size
+      cnMat = zeros(imgSize(1), imgSize(2)); % matrix of condition numbers
+      for k = 1:imgSize(1)
+	for l = 1:imgSize(2)
+	  M = [(pmd.Att2{id}(1, 1) / pmd.Dens2{id}(1) - ...
+		pmd.Att2{id}(1, 2) / pmd.Dens2{id}(2)), ...
+	       -pmd.recLowSet{ii}(k, l); ...
+               (pmd.Att2{id}(2, 1) / pmd.Dens2{id}(1) - ...
+		pmd.Att2{id}(2, 2) / pmd.Dens2{id}(2)), ...
+	       -pmd.recHighSet{ii}(k, l)];
+	  cnMat(k,l) = cond(M);
+	end
+      end
+    end
+
+    function PlotCondNumMdD2Map(pmd, doubletIndex, iter)
+      % Plot map of condition numbers corresponding to systems
+      % of equations used by DIRA. Tissue mask is used.
+
+      % Define a colormap
+      jettmp = colormap(jet(128+32));
+      jetmod = jettmp(1+16:128+16,:);
+      jetmod(1,:) = jettmp(1,:); 
+      jetmod(128,:) = jettmp(128+32,:); 
+
+      cnMat = pmd.GetCondNumMdD2Map(doubletIndex, iter);
+      figure();
+      colormap(jetmod);
+      ii = pmd.GetIterIndex(iter);  % iteration index
+      cnMat = cnMat .* pmd.tissue2Set{ii}{doubletIndex}; % apply the mask
+      imagesc(log10(cnMat));
+      axis image; axis off; colorbar('SouthOutside');
+      title(sprintf('log10(cond(A)), d=%d, i=%d', doubletIndex, iter));
+    end
+
+    function cnMat = GetCondNumMdD3SAMap(pmd, iter)
+      % Return the matrix of condition numbers corresponding to systems
+      % of equations used by DIRA.
+      %
+      % iter:         iteration number (0, ..., Ni)
+
+      ii = pmd.GetIterIndex(iter);           % iteration index
+      imgSize = size(pmd.recLowSet{ii});     % image size = matrix size
+      cnMat = zeros(imgSize(1), imgSize(2)); % matrix of condition numbers
+      for k = 1:imgSize(1)
+	for l = 1:imgSize(2)
+	  M = [(pmd.recLowSet{ii}(k, l)  - pmd.Att3SA(1, 3)) / pmd.Dens3SA(3) - ...
+               (pmd.recLowSet{ii}(k, l)  - pmd.Att3SA(1, 1)) / pmd.Dens3SA(1), ...
+               (pmd.recLowSet{ii}(k, l)  - pmd.Att3SA(1, 3)) / pmd.Dens3SA(3) - ...
+               (pmd.recLowSet{ii}(k, l)  - pmd.Att3SA(1, 2)) / pmd.Dens3SA(2); ...
+               (pmd.recHighSet{ii}(k, l) - pmd.Att3SA(2, 3)) / pmd.Dens3SA(3) - ...
+	       (pmd.recHighSet{ii}(k, l) - pmd.Att3SA(2, 1)) / pmd.Dens3SA(1), ...
+               (pmd.recHighSet{ii}(k, l) - pmd.Att3SA(2, 3)) / pmd.Dens3SA(3) - ...
+               (pmd.recHighSet{ii}(k, l) - pmd.Att3SA(2, 2)) / pmd.Dens3SA(2)];
+	  cnMat(k,l) = cond(M);
+	end
+      end
+    end
+
+    function PlotCondNumMdD3SAMap(pmd, iter)
+      % Plot map of condition numbers corresponding to systems
+      % of equations used by DIRA. Tissue mask is used.
+
+      % Define a colormap
+      jettmp = colormap(jet(128+32));
+      jetmod = jettmp(1+16:128+16,:);
+      jetmod(1,:) = jettmp(1,:); 
+      jetmod(128,:) = jettmp(128+32,:); 
+
+      cnMat = pmd.GetCondNumMdD3SAMap(iter);
+      figure();
+      colormap(jetmod);
+      ii = pmd.GetIterIndex(iter);  % iteration index
+      cnMat = cnMat .* pmd.maskSA; % apply the mask
+      imagesc(log10(cnMat));
+      axis image; axis off; colorbar('SouthOutside');
+      title(sprintf('log10(cond(A)), i=%d', iter));
     end
 
   end % methods

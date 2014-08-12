@@ -74,6 +74,10 @@ drawnow();
 % 
 disp('Classifying tissues...')
 [tissue2 tissue3] = tissueClassification(0, smd, pmd);
+pmd.tissue2Set = cell(nSavedIter);
+pmd.tissue3Set = cell(nSavedIter);
+pmd.tissue2Set{1} = tissue2;
+pmd.tissue3Set{1} = tissue3;
 
 % Tissue decomposition
 disp('Decomposing tissues...')
@@ -130,7 +134,7 @@ for iter = 1:numbIter
 
   % If the previous iteration is to be saved then increment the iteration index.
   % Otherwise the current iteration will overwrite the data of the previous iteration.
-  if GetIterIndex(iter-1) > 0
+  if pmd.GetIterIndex(iter-1) > 0
      pmd.curIterIndex = pmd.curIterIndex + 1;
   end
 
@@ -233,8 +237,8 @@ for iter = 1:numbIter
   recLow = reconstructIteratedProjections(ZLow, r2Vec, degVec, smd.N1, smd.dt1);
   recHigh = reconstructIteratedProjections(ZHigh, r2Vec, degVec, smd.N1, smd.dt1);
   
-  pmd.recLowSet{iter+1} = recLow;
-  pmd.recHighSet{iter+1} = recHigh;
+  pmd.recLowSet{pmd.curIterIndex} = recLow;
+  pmd.recHighSet{pmd.curIterIndex} = recHigh;
   
   if iter == numbIter
     pmd.PlotRecLacImages(iter);
@@ -246,7 +250,9 @@ for iter = 1:numbIter
   
   disp('Classifying tissues...')
   [tissue2 tissue3] = tissueClassification(iter, smd, pmd);
-  
+  pmd.tissue2Set{pmd.curIterIndex} = tissue2;
+  pmd.tissue3Set{pmd.curIterIndex} = tissue3;
+
   % Tissue decomposition
   % ---------------------------
   disp('Decomposing tissues...')
