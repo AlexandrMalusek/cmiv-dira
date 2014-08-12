@@ -6,7 +6,7 @@ close all;
 
 % Set Matlab path
 p = path();
-path(p, '../reconstruction;../../../functions;../../../data')
+path(p, '../reconstruction_LPW;../../../functions;../../../data')
 
 %% Output file names
 sinogramsFileName = 'sinograms.mat';
