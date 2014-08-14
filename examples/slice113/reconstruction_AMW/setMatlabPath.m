@@ -1,1 +1,3 @@
-../reconstruction_LPW/setMatlabPath.m
+% Set Matlab path
+p = path();
+path(p, '../../../functions;../../../data')

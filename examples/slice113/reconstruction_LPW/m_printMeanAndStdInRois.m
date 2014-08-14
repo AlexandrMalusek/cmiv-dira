@@ -1,9 +1,6 @@
 % Print mean values and standard deviations in circular ROIs
 
 setMatlabPath;
-
-% Analyze reconstructed phantom model data
-PhantomModelData;
 load('pmd.mat');
 
 % Define three circular ROIs
