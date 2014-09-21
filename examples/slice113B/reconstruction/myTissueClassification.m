@@ -24,6 +24,6 @@ function [tissue2, tissue3] = myTissueClassification(iter, smd, pmd)
   boneMask = 1-bwareaopen(1-boneMask, 4000);       % fill small holes
   softMask = smd.mask - boneMask;                  % soft tissue
   
-  tissue2{1} = boneMask;
-  tissue3{1} = softMask;
+  tissue2{1} = logical(boneMask);
+  tissue3{1} = logical(softMask);
 end
