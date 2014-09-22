@@ -1,13 +1,3 @@
-/*-------------------------------------------------------------------*/
-/* This routine computes a Joseph sinogram from a pixelized phantom. */
-/* In a Joseph sinogram, the interpolation kernel is designed        */
-/* relative to the phantom grid.                                     */
-/* Different interpolation filters are available.                    */
-/* The routine is based on Matlabs iradon.m.                         */
-/*                                                                   */
-/* Written by Maria Magnusson Seger 2003-04                          */
-/*-------------------------------------------------------------------*/
-
 #include <math.h>
 #include "mex.h"
 

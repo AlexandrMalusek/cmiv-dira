@@ -13,10 +13,10 @@ function [Wei2, dens] = MD2(AttE1mat, AttE2mat, Att2, Dens2, mask)
   % dens:     matrix of mass densities
   %
 
-  % 0 = Matlab, 1 = C
+  % 0 = Matlab, 1 = C, 2 = OpenMP
   global useCode
   switch (useCode)
-    case 1
+    case {1, 2}
       [Wei2, dens] = MD2c(AttE1mat, AttE2mat, Att2, Dens2, mask);
       return;
   end

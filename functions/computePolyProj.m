@@ -1,7 +1,18 @@
 %% Calculate polyenergetic projection
 %
 function [Ap] = computePolyProj(E, uE, N, p, mu)
-  
+
+  % 0 = Matlab, 1 = C
+  global useCode
+  switch (useCode)
+    case 1
+      [Ap] = computePolyProjc(E, uE, N, p, mu);
+      return;
+    case 2
+      [Ap] = openmp_computePolyProjc(E, uE, N, p, mu);
+      return
+  end
+
   sizeE = size(E);
   sizeP = size(p);
   

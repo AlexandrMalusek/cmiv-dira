@@ -40,10 +40,10 @@ function [Wei3] = MD3(AttE1mat, AttE2mat, Att3, Dens3, mask, isSpecial)
   % ans =
   %    511   511     3
 
-  % 0 = Matlab, 1 = C
+  % 0 = Matlab, 1 = C, 2 = OpenMP
   global useCode
   switch (useCode)
-    case 1
+    case {1, 2}
       [Wei3] = MD3c(AttE1mat, AttE2mat, Att3, Dens3, mask, isSpecial);
       return;
   end
