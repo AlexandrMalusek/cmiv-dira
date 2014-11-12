@@ -5,6 +5,7 @@ function q = rampwindowMtf(p, rVec, n)
   % Window function MTF to be used together with ramp-filter.
   % The Window function is divided by cos^n, (=0 gives no effect)
   % Maria Magnusson, 2014-07-08
+  % Alexander Örtenberg 2014-11-12
   %================================================================
 
   % variables
@@ -17,9 +18,10 @@ function q = rampwindowMtf(p, rVec, n)
   
   % design a MTF weighting window
   %----------------- -------------
+  MTF = load('MTF.dat', '-ascii');
   W = 0*Raxis;
   for k = 1:2*Nr
-    W(k) = mtfWindow(abs(Raxis(k)));
+    W(k) = mtfWindow(abs(Raxis(k)), MTF);
   end;
   
   % divide by cos^n, (=0 gives no effect)
