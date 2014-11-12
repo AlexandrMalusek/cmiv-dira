@@ -1,8 +1,6 @@
-function yarr = mtfWindow(xarr)
+function yarr = mtfWindow(xarr, MTF)
 
 yarr = xarr * 0;
-
-load -ascii MTF.dat
 xaxis = MTF(:,1);
 yaxis = MTF(:,2);
 siz = size(xaxis);
@@ -13,7 +11,7 @@ xarrlength = siz(1)*siz(2);
 for j = 1:xarrlength,
   xdata = xarr(j);
   k = 1;
-  while (k<=xlength) & (xdata>xaxis(k))
+  while (k<=xlength) && (xdata>xaxis(k))
     k=k+1;
   end;
   
