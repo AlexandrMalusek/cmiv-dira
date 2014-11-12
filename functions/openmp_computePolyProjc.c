@@ -17,7 +17,7 @@ static char rcs_id[] = "$Revision: 1.10 $";
 #define MU    (prhs[4])
 
 /* Output Arguments */
-#define	AP    (plhs[0])
+#define  AP    (plhs[0])
 
 /**
  * Need 5 input arguments: E, uE, N, p, mu
@@ -28,9 +28,9 @@ mexFunction(int nlhs, mxArray  *plhs[], int nrhs, const mxArray  *prhs[])
 {
   /* Input pointers */
   int *ePtr;        /* Energies */
-  double ue;	
-  double *nPtr;		  /* relative number of photons for Ul */
-  double *pPtr;		
+  double ue;  
+  double *nPtr;      /* relative number of photons for Ul */
+  double *pPtr;    
   double *muPtr;    
   
   /* temp pointers for copying values */
@@ -53,22 +53,22 @@ mexFunction(int nlhs, mxArray  *plhs[], int nrhs, const mxArray  *prhs[])
   /* Check validity of arguments */
   if (nrhs != 5)
   {
-      mexErrMsgTxt("Incorrect number of INPUT arguments.");
+    mexErrMsgTxt("Incorrect number of INPUT arguments.");
   }
   
   if (nlhs != 1)
   {
-      mexErrMsgTxt("Incorrect number of OUTPUT arguments.");
+    mexErrMsgTxt("Incorrect number of OUTPUT arguments.");
   }
   
   if (mxIsSparse(E) || mxIsSparse(UE) || mxIsSparse(N_P) || mxIsSparse(P) || mxIsSparse(MU))
   {
-      mexErrMsgTxt("Sparse inputs not supported.");
+    mexErrMsgTxt("Sparse inputs not supported.");
   }
   
   if (!mxIsDouble(E) || !mxIsDouble(UE) || !mxIsDouble(N_P) || !mxIsDouble(P) || !mxIsDouble(MU))
   {
-      mexErrMsgTxt("Input must be double.");
+    mexErrMsgTxt("Input must be double.");
   }
   
   /**
@@ -140,46 +140,46 @@ computePolychromaticProjection(int *ePtr, double ue, double *nPtr, double *pPtr,
                                double *muPtr, double *apPtr, int e_Size, int p_Size,
                                int mu_Size, int N, int M)
 {    
-    /* Loop variables */
-    int x,y;
-    int k;
-    int l;
-    
-    int energy;
-    int image_size;
-    
-    double temporarySum;
-    double result;
-    
-    image_size = M*N;
-    
-    #pragma omp parallel for private(x, result, k, temporarySum, energy, l)
-    for(y=0;y<M;++y)
+  /* Loop variables */
+  int x,y;
+  int k;
+  int l;
+  
+  int energy;
+  int image_size;
+  
+  double temporarySum;
+  double result;
+  
+  image_size = M*N;
+  
+  #pragma omp parallel for private(x, result, k, temporarySum, energy, l)
+  for(y=0;y<M;++y)
+  {
+    for(x=0;x<N;x++)
     {
-        for(x=0;x<N;x++)
-        {
-            result = 0;
+      result = 0;
 
-            for(k=1;k<e_Size-1;++k)
-            {
-                /* tmpSum = zeros(size(p(:, :, 1))); % 511x720 */
-                temporarySum = 0;
-                
-                energy = ePtr[k];
-                
-                /* tmpSum = tmpSum+(-mu(E(k), i)*100.*p(:, :, i)); */
-                for(l=0;l<p_Size;++l)
-                {
-                    temporarySum += -muPtr[l*mu_Size + energy - 1]*100*
-                                     pPtr[y*N + x + l*image_size] ;
-                }
-                
-                /* sl(:, :, k) = (E(k)*N(k))*(E(k+1)-E(k-1)).*exp(tmpSum);    */
-                result += (energy * nPtr[k])*(ePtr[k + 1] - ePtr[k - 1])*
-                           exp(temporarySum);
-            }
-            /* Ap = -log(up/uE);  */
-            apPtr[y*N + x] = -log((result/2)/ue);
-        }  
-    }    
+      for(k=1;k<e_Size-1;++k)
+      {
+        /* tmpSum = zeros(size(p(:, :, 1))); % 511x720 */
+        temporarySum = 0;
+        
+        energy = ePtr[k];
+        
+        /* tmpSum = tmpSum+(-mu(E(k), i)*100.*p(:, :, i)); */
+        for(l=0;l<p_Size;++l)
+        {
+          temporarySum += -muPtr[l*mu_Size + energy - 1]*100*
+                   pPtr[y*N + x + l*image_size] ;
+        }
+        
+        /* sl(:, :, k) = (E(k)*N(k))*(E(k+1)-E(k-1)).*exp(tmpSum);  */
+        result += (energy * nPtr[k])*(ePtr[k + 1] - ePtr[k - 1])*
+               exp(temporarySum);
+      }
+      /* Ap = -log(up/uE);  */
+      apPtr[y*N + x] = -log((result/2)/ue);
+    }  
+  }    
 }   
