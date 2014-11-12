@@ -6,28 +6,28 @@
 /* The routine is based on Matlabs iradon.m.                         */
 /*                                                                   */
 /* Written by Maria Magnusson Seger 2003-04                          */
+/* Updated by Alexander Örtenberg   2014-11                          */
 /*-------------------------------------------------------------------*/
-
 #include <math.h>
 #include <omp.h>
 #include "mex.h"
 
 static void sinogramJ(double *pPtr, double *iPtr, double *thetaPtr, double *rinPtr,
 		      int M, int N, int xOrigin, int yOrigin, int numAngles, int rFirst, 
-		      int rSize, int filter);
+		      int rSize, int interpolation);
 
 static char rcs_id[] = "$Revision: 1.10 $";
 
-#define MAXX(x,y) ((x) > (y) ? (x) : (y))
+#define MAX(x,y) ((x) > (y) ? (x) : (y))
+#define MIN(x,y) ((x) < (y) ? (x) : (y))
 
-#define Pi 3.14159265358979
-#define SMALL 0.000000001
+#define PI 3.14159265358979
 
 /* Input Arguments */
 #define I      (prhs[0])
 #define THETA  (prhs[1])
 #define R_IN   (prhs[2])
-#define FILTER (prhs[3])
+#define INTERP (prhs[3])
 
 /* Output Arguments */
 #define	P      (plhs[0])
@@ -40,42 +40,46 @@ mexFunction(int nlhs, mxArray  *plhs[], int nrhs, const mxArray  *prhs[])
   int numProjval;		/* number of projection values */
   double *thetaPtr;		/* pointer to theta values in radians */
   double *rinPtr;		/* pointer to projection coordinate array */
-  double *pr1, *pr2;		/* help pointers used in loop */
+  double *pr1, *pr2;	/* help pointers used in loop */
   double deg2rad;		/* conversion factor */
-  int k;			/* loop counter */
-  int M, N;			/* input image size */
-  int xOrigin, yOrigin;		/* center of image */
-  int rFirst, rLast;		/* r-values for first and last row of output */
+  int k;                /* loop counter */
+  int M, N;             /* input image size */
+  int xOrigin, yOrigin;	/* center of image */
+  int rFirst, rLast;	/* r-values for first and last row of output */
   int rSize;			/* number of rows in output */
-  int filter;			/* filter type */
-  
+  int interpolation;	/* interpolation type */
+
   /* Check validity of arguments */
-  if (nrhs < 4) {
-    mexErrMsgTxt("Too few input arguments");
+  if (nrhs < 4)
+  {
+      mexErrMsgTxt("Too few input arguments");
   }
-  if (nrhs > 4) {
-    mexErrMsgTxt("Too many input arguments");
+  if (nrhs > 4)
+  {
+      mexErrMsgTxt("Too many input arguments");
   }
-  if (nlhs > 2) {
-    mexErrMsgTxt("Too many output arguments to SINOGRAMJ");
+  if (nlhs > 2)
+  {
+      mexErrMsgTxt("Too many output arguments to SINOGRAMJ");
   }
-  if (mxIsSparse(I) || mxIsSparse(THETA) || mxIsSparse(R_IN)) {
-    mexErrMsgTxt("Sparse inputs not supported");
+  if (mxIsSparse(I) || mxIsSparse(THETA) || mxIsSparse(R_IN))
+  {
+      mexErrMsgTxt("Sparse inputs not supported");
   }
-  if (!mxIsDouble(I) || !mxIsDouble(THETA) || !mxIsDouble(R_IN) || !mxIsDouble(FILTER)) {
-    mexErrMsgTxt("Inputs must be double");
+  if (!mxIsDouble(I) || !mxIsDouble(THETA) || !mxIsDouble(R_IN) || !mxIsDouble(INTERP))
+  {
+      mexErrMsgTxt("Inputs must be double");
   }
-  
-  /* Get THETA values */
-  deg2rad = 3.14159265358979 / 180.0;
+
+  /* Get THETA degree values and convert to radians */
+  deg2rad = PI / 180.0;
   numAngles = mxGetM(THETA) * mxGetN(THETA);
   thetaPtr = (double *) mxCalloc(numAngles, sizeof(double));
   pr1 = mxGetPr(THETA);
   pr2 = thetaPtr;
   for (k = 0; k < numAngles; k++)
     *(pr2++) = *(pr1++) * deg2rad;
-  
-  
+
   /* Get R_IN values */
   numProjval = mxGetM(R_IN) * mxGetN(R_IN);
   rinPtr = (double *) mxCalloc(numProjval, sizeof(double));
@@ -86,21 +90,22 @@ mexFunction(int nlhs, mxArray  *plhs[], int nrhs, const mxArray  *prhs[])
   rSize  = numProjval;
   rFirst = (1-rSize)/2;
   rLast  = -rFirst;
-  
-  /* Get FILTER values */
-  pr1 = mxGetPr(FILTER);
-  filter = *pr1;
+
+  /* Get INTERP values */
+  pr1 = mxGetPr(INTERP);
+  interpolation = *pr1;
 
   /* Get input image size */
   M = mxGetM(I);
   N = mxGetN(I);
 
   /* Where is the coordinate system's origin? */
-  xOrigin = MAXX(0, (N-1)/2);
-  yOrigin = MAXX(0, (M-1)/2);
+  xOrigin = MAX(0, (N-1)/2);
+  yOrigin = MAX(0, (M-1)/2);
 
   /* Second out parameter? */
-  if (nlhs == 2) {
+  if (nlhs == 2)
+  {
     R = mxCreateDoubleMatrix(rSize, 1, mxREAL);
     pr1 = mxGetPr(R);
     for (k = rFirst; k <= rLast; k++)
@@ -108,95 +113,134 @@ mexFunction(int nlhs, mxArray  *plhs[], int nrhs, const mxArray  *prhs[])
   }
   
   /* Invoke main computation routines */
-  if (mxIsComplex(I)) {
+  if (mxIsComplex(I))
+  {
     P = mxCreateDoubleMatrix(rSize, numAngles, mxCOMPLEX);
     sinogramJ(mxGetPr(P), mxGetPr(I), thetaPtr, rinPtr, M, N, xOrigin, yOrigin, 
-	      numAngles, rFirst, rSize, filter); 
+	     numAngles, rFirst, rSize, interpolation); 
     sinogramJ(mxGetPi(P), mxGetPi(I), thetaPtr, rinPtr, M, N, xOrigin, yOrigin, 
-	      numAngles, rFirst, rSize, filter);
-  } else {
+	     numAngles, rFirst, rSize, interpolation);
+  }
+  else
+  {
     P = mxCreateDoubleMatrix(rSize, numAngles, mxREAL);
     sinogramJ(mxGetPr(P), mxGetPr(I), thetaPtr, rinPtr, M, N, xOrigin, yOrigin, 
-	      numAngles, rFirst, rSize, filter);
+	     numAngles, rFirst, rSize, interpolation);
   }
 }
 
 static void 
 sinogramJ(double *pPtr, double *iPtr, double *thetaPtr, double *rinPtr, int M, int N, 
-	  int xOrigin, int yOrigin, int numAngles, int rFirst, int rSize, int filter)
+	  int xOrigin, int yOrigin, int numAngles, int rFirst, int rSize, int interpolation)
 {
-  int    k, n, m, p;        /* loop counters */
-  double k_s, l_s, m_s;	    /* Siddon variables */
-  double angle;		    /* radian angle value */
-  double cosine, sine;      /* cosine and sine of current angle */
-  double *pr;               /* points inside output array */
-  double *pixelPtr;         /* points inside input array */
-  double r;		    /* radial coordinate */
-  double pixel1, pixel2;    /* current pixel values */
-  double pixel3, pixel0;    /* current pixel values */
-  double mIdx, nIdx;	    /* m and n value offset from initial array element */
-  double loc1, loc2;        /* pixel locations to the left and right */
-  double loc0, loc3;        /* more locations */
-  double value;		    /* help value */
-  int    mLow, nLow;	    /* (int) mIdx, (int) nIdx */
+    
+  int x,y,k,i;    /* Loop variables */
+  int radius;     /* Radius of circle from which to use values */
+  double r;     /* Polar coordinate */
+  int r_index;    /* Polar coordinate as integer to index matrix */
+  double fraction;  /* Fraction of the r coordinate */
+  
+  double pixelvalue, slopedpixelvalue;  /* Pixelvalue from input image and scaled version */
+  double leftpixel, rightpixel;     /* Distribution for left and right pixel */
+  double distance, leftdistance, rightdistance; /* Distance to left and right pixel */
+  
+  int *xdistance, *ydistance;/*Distance in carthesian coordinates to image center */
+  int *pixelindices;         /* Store indices of pixels to calculate */
+  int xdist, ydist; /* temporary variables */
+  int pixelindex; /* Current index to store pixel data on */
+  double pixelradius; /* Radius of the pixel from center of the image */
 
-  /*printf("filter=%d\n", filter);
-    printf("rSize=%d\n", rSize);*/
+  /* Precalculate the values for all angles */
+  double angle;
+  double *cosine, *sine, *slope;
   
-  /*-------------------------------------*/
-  /* Projection generation MAIN LOOP.    */
-  /* Loop through all projection angles. */
-  /*-------------------------------------*/
+  cosine  = (double *) malloc(numAngles * sizeof(double));
+  sine    = (double *) malloc(numAngles * sizeof(double));
+  slope   = (double *) malloc(numAngles * sizeof(double));
   
-#pragma omp parallel for private(angle, cosine, sine, pr, p,  r, m, n, pixelPtr, mIdx, mLow, loc1, loc2, pixel1, pixel2, nIdx, nLow)
-  for (k = 0; k < numAngles; k++)
+  for(k=0;k< numAngles;++k)
+  {
+    angle    = -thetaPtr[k];
+    cosine[k] = cos(angle);
+    sine[k]   = sin(angle);
+    /* Calculate the slope depending on which angle value is larger */
+    slope[k]   = 1/MAX(fabs(cosine[k]), fabs(sine[k]));
+  }
+  
+  /* Only values in a circle will be used, the edges do not add anything */
+  radius = ceil(rSize/2);  
+  
+  xdistance    = (int *)malloc (sizeof(int) * M * N);
+  ydistance    = (int *)malloc (sizeof(int) * M * N);
+  pixelindices = (int *)malloc (sizeof(int) * M * N);
+  pixelindex   = 0;
+  
+  /** Checks for every pixel if it is within the radius of the unit circle
+   *  and if it is a non-zero value. Only store its index and values if it
+   *  passes both checks, or it does not contribute
+   */
+
+  for(y=0;y<M;++y)
+  {    
+    for(x=0;x<N;++x)
     {
-      angle  = -thetaPtr[k];
-      cosine = cos(angle); 
-      sine   = sin(angle);
-      pr     = pPtr + k*rSize;	/* pointer to the top of the output column */
-      /* linear interpolation */
-      if (fabs(cosine)<fabs(sine))
-	{
-	  for (p = 0; p < rSize; p++)
-	    {
-	      r = rinPtr[p];
-	      for (n = 0; n < N; n++)
-		{
-		  pixelPtr = iPtr + n*M;
-		  mIdx = (r - (n-xOrigin) * cosine) / sine + yOrigin;  
-		  if ((mIdx>0) && (mIdx<(M-1)))
-		    {
-		      mLow = (int) mIdx;
-		      loc1 = mIdx - mLow;
-		      loc2 = 1 - loc1;
-		      pixel1 = *(pixelPtr+mLow);
-		      pixel2 = *(pixelPtr+mLow+1);
-		      pr[p] += (pixel1 * (1-loc1) + pixel2 * (1-loc2)) / fabs(sine);
-		    }
-		}
-	    }
-	} 
-      else
-	{
-	  for (p = 0; p < rSize; p++)
-	    {
-	      r = rinPtr[p];
-	      for (m = 0; m < M; m++)
-		{
-		  pixelPtr = iPtr + m;
-		  nIdx = (r - (m-yOrigin) * sine) / cosine + xOrigin;  
-		  if ((nIdx>0) && (nIdx<(N-1)))
-		    {
-		      nLow = (int) nIdx;
-		      loc1 = nIdx - nLow;
-		      loc2 = 1 - loc1;
-		      pixel1 = *(pixelPtr+M*nLow);
-		      pixel2 = *(pixelPtr+M*(nLow+1));
-		      pr[p] += (pixel1 * (1-loc1) + pixel2 * (1-loc2)) / fabs(cosine);
-		    }
-		}
-	    }
-	}    
+      ydist = x - xOrigin;
+      xdist = y - yOrigin;
+      pixelradius = sqrt(xdist * xdist + ydist * ydist);
+      
+      if((iPtr[y*M + x] != 0) && (pixelradius <= radius))
+      {
+        ydistance[pixelindex] = ydist;
+        xdistance[pixelindex] = xdist;
+        pixelindices[pixelindex] = y*N+x;
+        ++pixelindex;
+      }
     }
+  }
+  
+  #pragma omp parallel for private(i,pixelvalue, r, r_index, fraction, distance,\
+                                   leftdistance, rightdistance, slopedpixelvalue,\
+                                   leftpixel, rightpixel)
+  /* Calculate for every angle given as input*/
+  for(k=0;k<numAngles;++k)
+  {
+    /* Calculate for all pixels that will contribute */
+    for(i=0;i<pixelindex;++i)
+    {
+      /* Inside the circle, get the pixel value */
+      pixelvalue = iPtr[pixelindices[i]];
+          
+      /* Find the index for the radial coordinates */
+      r = xdistance[i]*cosine[k] + ydistance[i]*sine[k];          
+      r += xOrigin;   /* add xOrigin to shift center of image, avoiding negative values */
+      r_index = (int) r;  
+      fraction = r - r_index;
+
+      /* Get the pixel value and distribute between two pixels
+       * Calculates the distance once as it is used multiple times
+       * The slope is dependent on the angle, decreasing the
+       * triangle size */
+      distance = fraction*slope[k];
+      /* No contribution if the distance is less than 0 */
+      /* Equal to 
+       * (1 - fraction*slope[k]) and
+       * (1 - (1 - fraction) * slope[k])*/
+      leftdistance  = MAX(0, (1 - distance));
+      rightdistance = MAX(0, (1 + distance - slope[k]));
+  
+      slopedpixelvalue = pixelvalue * slope[k];
+      leftpixel  = leftdistance  * slopedpixelvalue;
+      rightpixel = rightdistance * slopedpixelvalue;
+
+      pPtr[k*M + r_index] += leftpixel;
+      pPtr[k*M + r_index + 1] += rightpixel;
+    }
+  }
+
+  free(xdistance);
+  free(ydistance);
+  free(pixelindices);
+  free(cosine);
+  free(sine);
+  free(slope);
 }
