@@ -9,39 +9,39 @@
 #define INTERP (prhs[3])
 
 /* Output Arguments */
-#define	IMG    (plhs[0])
+#define  IMG    (plhs[0])
 
 void 
 mexFunction(int nlhs, mxArray  *plhs[], int nrhs, const mxArray  *prhs[])
 {
-	/* INPUT PARAMETERS */
+  /* INPUT PARAMETERS */
   double *p;                 /* filtered projections (one per col) */
   double *thetaPtr;
   int numAngles;             /* number of projection angles (length of cosines vector, eg) */
   double angle;
-	double *cosines;           /* pre-computed cos of proj angles */
-	double *sines;             /* pre-computed sin of proj angles */
-	double *Nptr;              /* size of reconstructed image */
-	double *interp_ptr;        /* 0 for NN interp, 1 for linear interp */
-	
-	/* OUTPUT PARAMETERS */
-	double *img;               /* output image */
+  double *cosines;           /* pre-computed cos of proj angles */
+  double *sines;             /* pre-computed sin of proj angles */
+  double *Nptr;              /* size of reconstructed image */
+  double *interp_ptr;        /* 0 for NN interp, 1 for linear interp */
+  
+  /* OUTPUT PARAMETERS */
+  double *img;               /* output image */
 
-	/* Other variables */
-	int N;                     /* integer copy of Nptr (above) */
-	int interp_flag;           /* integer copy of interp_ptr (above) */
-	int x, y, i, k;            /* loop indecies */
-	double xcoord;             /* stores x-coordinate of pixel */
-	double ctr, xleft, ytop;	 /* used to tranform from matrix indecies */
+  /* Other variables */
+  int N;                     /* integer copy of Nptr (above) */
+  int interp_flag;           /* integer copy of interp_ptr (above) */
+  int x, y, i, k;            /* loop indecies */
+  double xcoord;             /* stores x-coordinate of pixel */
+  double ctr, xleft, ytop;   /* used to tranform from matrix indecies */
                              /* to (x,y) coords (see iradon.m) */
-	int len;                   /* length of each projection (spatial dimension) */
-	int ctr_idx;               /* centre index for projections */
-	
-	/* Temporary variable used for code optimization */
-	double cos_theta, sin_theta, t;
-	int a;
-	double *proj;              /* points at the start of a projection (a column) */
-	double *private_img;
+  int len;                   /* length of each projection (spatial dimension) */
+  int ctr_idx;               /* centre index for projections */
+  
+  /* Temporary variable used for code optimization */
+  double cos_theta, sin_theta, t;
+  int a;
+  double *proj;              /* points at the start of a projection (a column) */
+  double *private_img;
   double *temp_img;
   int thread_count;
   
@@ -76,26 +76,26 @@ mexFunction(int nlhs, mxArray  *plhs[], int nrhs, const mxArray  *prhs[])
     cosines[k] = cos(angle);    /* Calculate cosine value */
     sines[k] = sin(angle);      /* Calculate sine value */
   }
-	
+  
   p = mxGetPr(P);
   len = mxGetM(P);
   
   Nptr = mxGetPr(N_SIZE);
   N = (int) *Nptr;
   
-	interp_ptr = mxGetPr(INTERP);
-	interp_flag = (int) *interp_ptr;
+  interp_ptr = mxGetPr(INTERP);
+  interp_flag = (int) *interp_ptr;
     
   /* Create a matrix for the return argument */
   IMG = mxCreateDoubleMatrix(N, N, mxREAL);
   img = mxGetPr(IMG);  /* Get pointer to the data array */
 
-	ctr = floor((N-1) / 2);
-	
-	xleft = -ctr;
-	ytop = ctr;
-	
-	ctr_idx = (int)floor(len/2);  /* centre index for projections */ 
+  ctr = floor((N-1) / 2);
+  
+  xleft = -ctr;
+  ytop = ctr;
+  
+  ctr_idx = (int)floor(len/2);  /* centre index for projections */ 
   
   thread_count = omp_get_max_threads();
   
@@ -110,7 +110,7 @@ mexFunction(int nlhs, mxArray  *plhs[], int nrhs, const mxArray  *prhs[])
   {     
     private_img = temp_img + N*N*omp_get_thread_num();
     double *img_ptr;
-	
+  
     #pragma omp for private(k, cos_theta, sin_theta, proj, img_ptr, x, xcoord, t, y, a)
     for (k=0;k<numAngles;k++)
     {
@@ -125,8 +125,8 @@ mexFunction(int nlhs, mxArray  *plhs[], int nrhs, const mxArray  *prhs[])
         t = xcoord*cos_theta + ytop*sin_theta;  /* After this, t can simply be decremented by sin_theta each y-iter */
 
         for (y=0;y<N;y++)
-        {			
-          a = ((int) (t + N)) - N;  /* Shifts t to positive values, to avoid using floor */	
+        {      
+          a = ((int) (t + N)) - N;  /* Shifts t to positive values, to avoid using floor */  
 
           *img_ptr += (t-a)*( proj[a + ctr_idx + 1] - proj[a+ctr_idx] ) + proj[a+ctr_idx];
           img_ptr++;
