@@ -12,8 +12,8 @@
 #include "mex.h"
 
 static void sinogramJ(double *pPtr, double *iPtr, double *thetaPtr, double *rinPtr,
-		      int M, int N, int xOrigin, int yOrigin, int numAngles, int rFirst, 
-		      int rSize, int interpolation);
+          int M, int N, int xOrigin, int yOrigin, int numAngles, int rFirst, 
+          int rSize, int interpolation);
 
 static char rcs_id[] = "$Revision: 1.10 $";
 
@@ -29,24 +29,24 @@ static char rcs_id[] = "$Revision: 1.10 $";
 #define INTERP (prhs[3])
 
 /* Output Arguments */
-#define	P      (plhs[0])
+#define  P      (plhs[0])
 #define R      (plhs[1])
 
 void 
 mexFunction(int nlhs, mxArray  *plhs[], int nrhs, const mxArray  *prhs[])
 {
-  int numAngles;		/* number of theta values */
-  int numProjval;		/* number of projection values */
-  double *thetaPtr;		/* pointer to theta values in radians */
-  double *rinPtr;		/* pointer to projection coordinate array */
-  double *pr1, *pr2;	/* help pointers used in loop */
-  double deg2rad;		/* conversion factor */
+  int numAngles;    /* number of theta values */
+  int numProjval;    /* number of projection values */
+  double *thetaPtr;    /* pointer to theta values in radians */
+  double *rinPtr;    /* pointer to projection coordinate array */
+  double *pr1, *pr2;  /* help pointers used in loop */
+  double deg2rad;    /* conversion factor */
   int k;                /* loop counter */
   int M, N;             /* input image size */
-  int xOrigin, yOrigin;	/* center of image */
-  int rFirst, rLast;	/* r-values for first and last row of output */
-  int rSize;			/* number of rows in output */
-  int interpolation;	/* interpolation type */
+  int xOrigin, yOrigin;  /* center of image */
+  int rFirst, rLast;  /* r-values for first and last row of output */
+  int rSize;      /* number of rows in output */
+  int interpolation;  /* interpolation type */
 
   /* Check validity of arguments */
   if (nrhs < 4)
@@ -116,21 +116,21 @@ mexFunction(int nlhs, mxArray  *plhs[], int nrhs, const mxArray  *prhs[])
   {
     P = mxCreateDoubleMatrix(rSize, numAngles, mxCOMPLEX);
     sinogramJ(mxGetPr(P), mxGetPr(I), thetaPtr, rinPtr, M, N, xOrigin, yOrigin, 
-	     numAngles, rFirst, rSize, interpolation); 
+       numAngles, rFirst, rSize, interpolation); 
     sinogramJ(mxGetPi(P), mxGetPi(I), thetaPtr, rinPtr, M, N, xOrigin, yOrigin, 
-	     numAngles, rFirst, rSize, interpolation);
+       numAngles, rFirst, rSize, interpolation);
   }
   else
   {
     P = mxCreateDoubleMatrix(rSize, numAngles, mxREAL);
     sinogramJ(mxGetPr(P), mxGetPr(I), thetaPtr, rinPtr, M, N, xOrigin, yOrigin, 
-	     numAngles, rFirst, rSize, interpolation);
+       numAngles, rFirst, rSize, interpolation);
   }
 }
 
 static void 
 sinogramJ(double *pPtr, double *iPtr, double *thetaPtr, double *rinPtr, int M, int N, 
-	  int xOrigin, int yOrigin, int numAngles, int rFirst, int rSize, int interpolation)
+    int xOrigin, int yOrigin, int numAngles, int rFirst, int rSize, int interpolation)
 {
     
   int x,y,k,i;    /* Loop variables */
