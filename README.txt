@@ -1,3 +1,9 @@
+!!! The cmiv-dira project is beeing migrated from Google Code !!!
+
+The documentation is broken. It will be fixed soon.
+
+
+
 *******************************************************************************
 The development model
 *******************************************************************************
