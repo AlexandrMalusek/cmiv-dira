@@ -3,6 +3,11 @@
 
 setMatlabPath;
 
+% Define what code to use
+% 0 = Matlab, 1 = C, 2 = OpenMP 
+global useCode
+useCode = 0;
+
 %% Load data and initialize variables
 % ------------------------------------
 disp('Loading data and initializing variables...')

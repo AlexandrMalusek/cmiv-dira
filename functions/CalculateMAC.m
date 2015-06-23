@@ -2,13 +2,20 @@
 %
 function [uMass] = CalculateMAC(moleculeStr, eE)
 
-  fId1 = fopen('data_Ar.txt', 'r');
-  mass = fscanf(fId1, '%s %i %f', [4 103])';
-  fclose(fId1);
+  persistent mass;
+  persistent macs;
+
+  if isempty(mass)
+    fId1 = fopen('data_Ar.txt', 'r');
+    mass = fscanf(fId1, '%s %i %f', [4 103])';
+    fclose(fId1);
+  end
   
-  fId2 = fopen('data_macTable.txt', 'r');
-  macs = fscanf(fId2, '%f', [101 399])';
-  fclose(fId2);
+  if isempty(macs)
+    fId2 = fopen('data_macTable.txt', 'r');
+    macs = fscanf(fId2, '%f', [101 399])';
+    fclose(fId2);
+  end
   
   macsEE = macs(macs(:,1) == eE,2:end);
   

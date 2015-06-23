@@ -9,6 +9,7 @@
 /* Updated by Alexander Örtenberg   2014-11                          */
 /*-------------------------------------------------------------------*/
 #include <math.h>
+#include <omp.h>
 #include "mex.h"
 
 static void sinogramJ(double *pPtr, double *iPtr, double *thetaPtr, double *rinPtr,
@@ -148,7 +149,7 @@ sinogramJ(double *pPtr, double *iPtr, double *thetaPtr, double *rinPtr, int M, i
   int xdist, ydist; /* temporary variables */
   int pixelindex; /* Current index to store pixel data on */
   double pixelradius; /* Radius of the pixel from center of the image */
-  
+
   /* Precalculate the values for all angles */
   double angle;
   double *cosine, *sine, *slope;
@@ -197,7 +198,9 @@ sinogramJ(double *pPtr, double *iPtr, double *thetaPtr, double *rinPtr, int M, i
     }
   }
   
-
+  #pragma omp parallel for private(i,pixelvalue, r, r_index, fraction, distance,\
+                                   leftdistance, rightdistance, slopedpixelvalue,\
+                                   leftpixel, rightpixel)
   /* Calculate for every angle given as input*/
   for(k=0;k<numAngles;++k)
   {
@@ -241,3 +244,5 @@ sinogramJ(double *pPtr, double *iPtr, double *thetaPtr, double *rinPtr, int M, i
   free(sine);
   free(slope);
 }
+
+  

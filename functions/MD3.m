@@ -40,6 +40,14 @@ function [Wei3] = MD3(AttE1mat, AttE2mat, Att3, Dens3, mask, isSpecial)
   % ans =
   %    511   511     3
 
+  % 0 = Matlab, 1 = C, 2 = OpenMP
+  global useCode
+  switch (useCode)
+    case {1, 2}
+      [Wei3] = MD3c(AttE1mat, AttE2mat, Att3, Dens3, mask, isSpecial);
+      return;
+  end
+
   imgSize = size(mask);
   Wei3 = zeros(imgSize(1), imgSize(2), 3);
   
@@ -47,7 +55,7 @@ function [Wei3] = MD3(AttE1mat, AttE2mat, Att3, Dens3, mask, isSpecial)
     for l = 1:imgSize(2)
       if mask(k, l) == 1
         if isSpecial==0 || (AttE1mat(k, l)>=Att3(1, 1) && AttE2mat(k, l)>=Att3(2, 1))
-          M = [ (AttE1mat(k, l) - Att3(1, 1))/Dens3(1) - ...
+          M = [ (AttE1mat(k, l) - Att3(1, 1)) / Dens3(1) - ...
             (AttE1mat(k, l) - Att3(1, 3)) / Dens3(3), ...
             (AttE1mat(k, l) - Att3(1, 2)) / Dens3(2) - ...
             (AttE1mat(k, l) - Att3(1, 3)) / Dens3(3); ...
@@ -63,8 +71,8 @@ function [Wei3] = MD3(AttE1mat, AttE2mat, Att3, Dens3, mask, isSpecial)
           Wei3(k, l, 2) = w(2);
           Wei3(k, l, 3) = 1 - w(1) - w(2);
         else
-          Wei3(k, l, 1) = (AttE1mat(k, l)/Att3(1, 1) +  ...
-            AttE2mat(k, l)/Att3(2, 1))/2;
+          Wei3(k, l, 1) = (AttE1mat(k, l) / Att3(1, 1) +  ...
+            AttE2mat(k, l) / Att3(2, 1)) / 2;
         end
       end
     end
