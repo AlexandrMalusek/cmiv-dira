@@ -9,7 +9,7 @@ function [Ap] = computePolyProj(E, uE, N, p, mu)
       [Ap] = computePolyProjc(E, uE, N, p, mu);
       return;
     case 2
-      [Ap] = openmp_computePolyProjc(E, uE, N, p, mu);
+      [Ap] = computePolyProjc_openmp(E, uE, N, p, mu);
       return
   end
 

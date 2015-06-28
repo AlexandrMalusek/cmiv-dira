@@ -64,7 +64,7 @@ function [P,r] = sinogramJ(I,thetavec,rvec,filter)
   global useCode
   switch (useCode)
     case 2
-      [P,r] = openmp_sinogramJc(double(I),thetavec,rvec,filter);
+      [P,r] = sinogramJc_openmp(double(I),thetavec,rvec,filter);
       return;
   end
 
