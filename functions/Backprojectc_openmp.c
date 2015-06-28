@@ -1,3 +1,16 @@
+/*
+ * Backprojection is performed by placing the projections values
+ * along a line integral (radiological path). This is performed
+ * for all projections, for all angles. This implementation works
+ * by iterating over all projections and placing the values on a single
+ * output row and then moving on to the next output row. The benefit of
+ * this implementation is that for parallel implementations no
+ * synchronization is required and no temporary data needs to be allocated.
+ * This work is based on the implementation made by Jeff Orchard, 
+ * http://www.mathworks.com/matlabcentral/fileexchange/12852-iradon-speedy
+ *
+ * Created by Alexander Örtenberg 2015-04
+ */
 #include <math.h>
 #include <omp.h>
 #include "mex.h"
@@ -9,41 +22,32 @@
 #define INTERP (prhs[3])
 
 /* Output Arguments */
-#define  IMG    (plhs[0])
+#define  IMG  (plhs[0])
 
 void 
 mexFunction(int nlhs, mxArray  *plhs[], int nrhs, const mxArray  *prhs[])
 {
   /* INPUT PARAMETERS */
-  double *p;                 /* filtered projections (one per col) */
-  double *thetaPtr;
-  int numAngles;             /* number of projection angles (length of cosines vector, eg) */
-  double angle;
-  double *cosines;           /* pre-computed cos of proj angles */
-  double *sines;             /* pre-computed sin of proj angles */
-  double *Nptr;              /* size of reconstructed image */
-  double *interp_ptr;        /* 0 for NN interp, 1 for linear interp */
+  double *p;                  /* filtered projections (one per col) */
+  double *thetaPtr;           /* pointer to array of projection angles */
+  int numAngles;              /* number of projection angles (length of cosines vector, eg) */
+  double *Nptr;               /* size of reconstructed image */
+  double *interp_ptr;         /* 0 for NN interp, 1 for linear interp */
   
-  /* OUTPUT PARAMETERS */
-  double *img;               /* output image */
+  double *img;                /* output image */
 
-  /* Other variables */
-  int N;                     /* integer copy of Nptr (above) */
-  int interp_flag;           /* integer copy of interp_ptr (above) */
-  int x, y, i, k;            /* loop indecies */
-  double xcoord;             /* stores x-coordinate of pixel */
-  double ctr, xleft, ytop;   /* used to tranform from matrix indecies */
-                             /* to (x,y) coords (see iradon.m) */
-  int len;                   /* length of each projection (spatial dimension) */
-  int ctr_idx;               /* centre index for projections */
+  int N;                      /* integer copy of Nptr (above) */
+  int interp_flag;            /* integer copy of interp_ptr (above) */
+  int x, y, k;                /* loop indecies */
+  double xcoord;              /* stores x-coordinate of pixel */
+  double ctr, xleft, ytop;    /* used to tranform from matrix indecies */
+                              /* to (x,y) coords (see iradon.m) */
+  int projection_length;      /* length of each projection (spatial dimension) */
+  int center;                 /* center index for projections */
   
   /* Temporary variable used for code optimization */
-  double cos_theta, sin_theta, t;
-  int a;
-  double *proj;              /* points at the start of a projection (a column) */
-  double *private_img;
-  double *temp_img;
-  int thread_count;
+  double cos_theta, sin_theta, t, fraction;
+  int a, out_row, input_row;
   
   /* Check validity of arguments */
   if (nrhs != 4)
@@ -63,89 +67,61 @@ mexFunction(int nlhs, mxArray  *plhs[], int nrhs, const mxArray  *prhs[])
     mexErrMsgTxt("Inputs must be double.");
   }
   
+  /* Read the data and values needed */
   thetaPtr = mxGetPr(THETA);
   numAngles = mxGetM(THETA) * mxGetN(THETA);
   
-  cosines = (double *) malloc(numAngles * sizeof(double));
-  sines   = (double *) malloc(numAngles * sizeof(double));
-  
-  /* Precalculate all cosine and sine values */
-  for(k=0;k< numAngles;++k)
-  {
-    angle = thetaPtr[k];
-    cosines[k] = cos(angle);    /* Calculate cosine value */
-    sines[k] = sin(angle);      /* Calculate sine value */
-  }
-  
   p = mxGetPr(P);
-  len = mxGetM(P);
+  projection_length= mxGetM(P);
   
   Nptr = mxGetPr(N_SIZE);
   N = (int) *Nptr;
   
   interp_ptr = mxGetPr(INTERP);
   interp_flag = (int) *interp_ptr;
-    
+  
   /* Create a matrix for the return argument */
   IMG = mxCreateDoubleMatrix(N, N, mxREAL);
-  img = mxGetPr(IMG);  /* Get pointer to the data array */
-
+  img = mxGetPr(IMG);
+  
   ctr = floor((N-1) / 2);
   
   xleft = -ctr;
   ytop = ctr;
+  /* center index for projections */ 
+  center = (int)floor(projection_length/2);
   
-  ctr_idx = (int)floor(len/2);  /* centre index for projections */ 
-  
-  thread_count = omp_get_max_threads();
-  
-  temp_img = (double *) malloc(sizeof(double)* N * N * thread_count);
-  for(i=0;i<N*N*thread_count;++i)
-    temp_img[i] = 0;
-  
-  for(i=0;i<N*N;++i)
-    img[i] = 0;
-  
-  #pragma omp parallel private(private_img)
-  {     
-    private_img = temp_img + N*N*omp_get_thread_num();
-    double *img_ptr;
-  
-    #pragma omp for private(k, cos_theta, sin_theta, proj, img_ptr, x, xcoord, t, y, a)
-    for (k=0;k<numAngles;k++)
-    {
-      cos_theta = cosines[k];
-      sin_theta = sines[k];
-      proj = (p + k*len);  /* point at proper column */
-      img_ptr = private_img;
-
-      for (x=0;x<N;x++)
-      {
-        xcoord = xleft + x;  /* x-coord */
-        t = xcoord*cos_theta + ytop*sin_theta;  /* After this, t can simply be decremented by sin_theta each y-iter */
-
-        for (y=0;y<N;y++)
-        {      
-          a = ((int) (t + N)) - N;  /* Shifts t to positive values, to avoid using floor */  
-
-          *img_ptr += (t-a)*( proj[a + ctr_idx + 1] - proj[a+ctr_idx] ) + proj[a+ctr_idx];
-          img_ptr++;
-
-          t -= sin_theta;
-        }
-      }
-    }
+  #pragma omp parallel for private(xcoord, out_row, k, cos_theta, sin_theta, input_row, \
+                                   t, y, a, fraction)
+  /* For each row in the output matrix */
+  for(x=0;x<N;x++)
+  {
+    xcoord = xleft + x;
+    out_row = x*N;
     
-    #pragma omp critical
+    /* For every projection angle in the input matrix (each input matrix row) */
+    for(k=0;k<numAngles;k++)
     {
-      for(i=0;i<N*N;++i)
-      {
-        img[i] += private_img[i];
+      cos_theta = cos(thetaPtr[k]);
+      sin_theta = sin(thetaPtr[k]);
+      
+      /* Set the counter to current input row*/
+      input_row = k*projection_length;
+      
+      t = xcoord*cos_theta + ytop*sin_theta; 
+      
+      for (y=0;y<N;y++)
+      {      
+        /* Calculate what values to place from the input matrix */
+        a  = ((int) (t + N)) - N;  /* Shifts t to positive values, to avoid using floor */  
+        fraction = t - a;
+        a +=center;
+
+        img[out_row + y] += fraction*(p[input_row + a + 1] - p[input_row + a]) + p[input_row + a];
+      
+        /* Step forward to next position to read data from */
+        t -= sin_theta;
       }
     }
   }
-  
-  free(temp_img);
-  free(cosines);
-  free(sines);
 }

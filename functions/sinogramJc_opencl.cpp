@@ -4,9 +4,14 @@
 /* relative to the phantom grid.                                     */
 /*                                                                   */
 /* Written by Maria Magnusson Seger 2003-04                          */
-/* Updated by Alexander Örtenberg   2015-04                          */
+/* Updated by Alexander Örtenberg   2014-11                          */
 /*-------------------------------------------------------------------*/
+
 #include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <CL/cl.h>
 #include "mex.h"
 
 static void sinogramJ(double *pPtr, double *iPtr, double *thetaPtr, double *rinPtr,
@@ -16,8 +21,6 @@ static void sinogramJ(double *pPtr, double *iPtr, double *thetaPtr, double *rinP
 static char rcs_id[] = "$Revision: 1.10 $";
 
 #define MAX(x,y) ((x) > (y) ? (x) : (y))
-#define MIN(x,y) ((x) < (y) ? (x) : (y))
-
 #define PI 3.14159265358979
 
 /* Input Arguments */
@@ -132,23 +135,16 @@ static void
 sinogramJ(double *pPtr, double *iPtr, double *thetaPtr, double *rinPtr, int M, int N, 
     int xOrigin, int yOrigin, int numAngles, int rFirst, int rSize, int interpolation)
 {
-    
-  int x,y,k,i;                                   /* Loop variables */
+  int x,y,k;                                     /* Loop variables */
   int radius;                                    /* Radius of circle from which to use values */
-  double r;                                      /* Polar coordinate */
-  int r_index;                                   /* Polar coordinate as integer to index matrix */
-  double fraction;                               /* Fraction of the r coordinate */
   
-  double pixelvalue, slopedpixelvalue;           /* Pixelvalue from input image and scaled version */
-  double leftpixel, rightpixel;                  /* Distribution for left and right pixel */
-  double distance, leftdistance, rightdistance;  /* Distance to left and right pixel */
-  
+  /* Pixel information */
   int *xdistance, *ydistance;                    /*Distance in carthesian coordinates to image center */
   int *pixelindices;                             /* Store indices of pixels to calculate */
   int xdist, ydist;                              /* temporary variables */
   int pixelindex;                                /* Current index to store pixel data on */
   double pixelradius;                            /* Radius of the pixel from center of the image */
-
+    
   /* Precalculate the values for all angles */
   double angle;
   double *cosine, *sine, *slope;
@@ -159,7 +155,7 @@ sinogramJ(double *pPtr, double *iPtr, double *thetaPtr, double *rinPtr, int M, i
   
   for(k=0;k< numAngles;++k)
   {
-    angle    = -thetaPtr[k];
+    angle     = -thetaPtr[k];
     cosine[k] = cos(angle);
     sine[k]   = sin(angle);
     /* Calculate the slope depending on which angle value is larger */
@@ -167,7 +163,7 @@ sinogramJ(double *pPtr, double *iPtr, double *thetaPtr, double *rinPtr, int M, i
   }
   
   /* Only values in a circle will be used, the edges do not add anything */
-  radius = ceil(rSize/2);  
+  radius = rSize/2;  
   
   xdistance    = (int *)malloc (sizeof(int) * M * N);
   ydistance    = (int *)malloc (sizeof(int) * M * N);
@@ -184,7 +180,7 @@ sinogramJ(double *pPtr, double *iPtr, double *thetaPtr, double *rinPtr, int M, i
     {
       ydist = x - xOrigin;
       xdist = y - yOrigin;
-      pixelradius = sqrt(xdist * xdist + ydist * ydist);
+      pixelradius = sqrt((double) (xdist * xdist + ydist * ydist));
       
       if((iPtr[y*M + x] != 0) && (pixelradius <= radius))
       {
@@ -194,44 +190,133 @@ sinogramJ(double *pPtr, double *iPtr, double *thetaPtr, double *rinPtr, int M, i
         ++pixelindex;
       }
     }
-  }
-
-  /* Calculate for every angle given as input*/
-  for(k=0;k<numAngles;++k)
-  {
-    /* Calculate for all pixels that will contribute */
-    for(i=0;i<pixelindex;++i)
-    {
-      /* Inside the circle, get the pixel value */
-      pixelvalue = iPtr[pixelindices[i]];
-          
-      /* Find the index for the radial coordinates */
-      r = xdistance[i]*cosine[k] + ydistance[i]*sine[k];          
-      r += xOrigin;   /* add xOrigin to shift center of image, avoiding negative values */
-      r_index = (int) r;  
-      fraction = r - r_index;
-
-      /* Get the pixel value and distribute between two pixels
-       * Calculates the distance once as it is used multiple times
-       * The slope is dependent on the angle, decreasing the
-       * triangle size */
-      distance = fraction*slope[k];
-      /* No contribution if the distance is less than 0 */
-      /* Equal to 
-       * (1 - fraction*slope[k]) and
-       * (1 - (1 - fraction) * slope[k])*/
-      leftdistance  = MAX(0, (1 - distance));
-      rightdistance = MAX(0, (1 + distance - slope[k]));
+  } 
   
-      slopedpixelvalue = pixelvalue * slope[k];
-      leftpixel  = leftdistance  * slopedpixelvalue;
-      rightpixel = rightdistance * slopedpixelvalue;
+  /* OpenCL variables */
+  int error;
+  cl_platform_id platform;
+  unsigned int no_platforms;
+  cl_device_id device;
+  unsigned int no_devices;
+  size_t no_workgroups;
+  cl_context context;
+  cl_command_queue commandqueue;
+  
+  /* Used for reading the kernel from file */ 
+  size_t kernelLength;
+  char *source;
+  FILE *theFile;
+  char c;
+  long howMuch;
+  
+  static cl_program program_sinogramJ;
+  static cl_kernel kernel_sinogramJ;
+  
+  cl_mem IMG_input; 
+  cl_mem IDX_input;
+  cl_mem XDIS_input;
+  cl_mem YDIS_input;
+  cl_mem COS_input;
+  cl_mem SIN_input;
+  cl_mem SLOPE_input;
+  cl_mem PROJ_output;
 
-      pPtr[k*M + r_index] += leftpixel;
-      pPtr[k*M + r_index + 1] += rightpixel;
-    }
+  size_t localworksize;
+  size_t globalworksize;
+  
+  cl_event event;
+
+  /* Initialization */
+  error = clGetPlatformIDs(1, &platform, &no_platforms);
+  error = clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &device, &no_devices); 
+  error = clGetDeviceInfo(device, CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(size_t), &no_workgroups, NULL);
+  context = clCreateContext(0, 1, &device, NULL, NULL, &error);
+  commandqueue = clCreateCommandQueue(context, device, 0, &error);
+	
+  /* Reads the kernel from file */
+  /* Get file length */
+  theFile = fopen("../../../functions/sinogramJc.cl", "rb");
+  howMuch = 0;
+  c = 0;
+  while (c != EOF)
+  {
+    c = getc(theFile);
+    howMuch++;
   }
+  fclose(theFile);
+	
+  /* Read the data */
+  source = (char *)malloc(howMuch);
+  theFile = fopen("../../../functions/sinogramJc.cl", "rb");
+  fread(source, howMuch-1, 1, theFile);
+  fclose(theFile);
+  source[howMuch-1] = 0;
+  kernelLength = strlen(source);
+  
+  program_sinogramJ = clCreateProgramWithSource(context, 1, (const char **)&source, 
+                                                    &kernelLength, &error);
+    
+  error = clBuildProgram(program_sinogramJ, 0, NULL, NULL, NULL, NULL);
+  if (error != CL_SUCCESS)
+  {
+    char cBuildLog[10240];
+    clGetProgramBuildInfo(program_sinogramJ, device, CL_PROGRAM_BUILD_LOG, 
+                          sizeof(cBuildLog), cBuildLog, NULL );
+    printf("\nBuild Log:\n%s\n\n", (char *)&cBuildLog);
+  }
+  
+  kernel_sinogramJ = clCreateKernel(program_sinogramJ, "sinogramJ", &error);
+  
+  free(source);
+  
+  /* Create buffers for data */
+  IMG_input   = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,  sizeof(double) * M * N, iPtr, NULL);
+  IDX_input   = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,  sizeof(int) * M * N, pixelindices, NULL);
+  XDIS_input  = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,  sizeof(int) * M * N, xdistance, NULL);
+  YDIS_input  = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,  sizeof(int) * M * N, ydistance, NULL);
+  COS_input   = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,  sizeof(double) * numAngles, cosine, NULL);
+  SIN_input   = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,  sizeof(double) * numAngles, sine, NULL);
+  SLOPE_input = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,  sizeof(double) * numAngles, slope, NULL);
+  PROJ_output = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof(double) * rSize * numAngles, NULL, NULL);
+  
+  /* Set the kernel arguments */
+  error  = clSetKernelArg(kernel_sinogramJ, 0, sizeof(int), &pixelindex);
+  error |= clSetKernelArg(kernel_sinogramJ, 1, sizeof(cl_mem), &IMG_input);
+  error |= clSetKernelArg(kernel_sinogramJ, 2, sizeof(cl_mem), &IDX_input);
+  error |= clSetKernelArg(kernel_sinogramJ, 3, sizeof(cl_mem), &XDIS_input);
+  error |= clSetKernelArg(kernel_sinogramJ, 4, sizeof(cl_mem), &YDIS_input);
+  error |= clSetKernelArg(kernel_sinogramJ, 5, sizeof(cl_mem), &COS_input);
+  error |= clSetKernelArg(kernel_sinogramJ, 6, sizeof(cl_mem), &SIN_input);
+  error |= clSetKernelArg(kernel_sinogramJ, 7, sizeof(int), &xOrigin);
+  error |= clSetKernelArg(kernel_sinogramJ, 8, sizeof(cl_mem), &SLOPE_input);
+  error |= clSetKernelArg(kernel_sinogramJ, 9, sizeof(int), &rSize);
+  error |= clSetKernelArg(kernel_sinogramJ, 10, sizeof(cl_mem), &PROJ_output);
+  
+  localworksize = 64;
+  globalworksize = numAngles;
 
+  /* Enqueue and run */
+  error = clEnqueueNDRangeKernel(commandqueue, kernel_sinogramJ, 1, NULL, &globalworksize, &localworksize, 0, NULL, &event);
+  clWaitForEvents(1, &event); // Synch
+  
+    /* Read result */
+  error = clEnqueueReadBuffer(commandqueue, PROJ_output, CL_TRUE, 0, sizeof(double) * rSize * numAngles, pPtr, 0, NULL, NULL);
+  clWaitForEvents(1, &event); // Synch
+  
+  clReleaseMemObject(IMG_input);
+  clReleaseMemObject(IDX_input);
+  clReleaseMemObject(XDIS_input);
+  clReleaseMemObject(YDIS_input);
+  clReleaseMemObject(COS_input);
+  clReleaseMemObject(SIN_input);
+  clReleaseMemObject(SLOPE_input);
+  clReleaseMemObject(PROJ_output);
+  
+  clReleaseKernel(kernel_sinogramJ);
+  clReleaseProgram(program_sinogramJ);
+  clReleaseCommandQueue(commandqueue);
+  clReleaseContext(context);
+  
   free(xdistance);
   free(ydistance);
   free(pixelindices);
