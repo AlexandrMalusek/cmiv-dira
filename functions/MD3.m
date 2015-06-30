@@ -40,14 +40,14 @@ function [Wei3] = MD3(AttE1mat, AttE2mat, Att3, Dens3, mask, isSpecial)
   % ans =
   %    511   511     3
 
-  % 0 = Matlab, 1 = C, 2 = OpenMP
+  % 0 = Matlab, 1 = C, 2 = OpenMP, 3 = OpenCL
   global useCode
   switch (useCode)
-    case {1, 2}
+    case {1, 2, 3}
       [Wei3] = MD3c(AttE1mat, AttE2mat, Att3, Dens3, mask, isSpecial);
       return;
   end
-
+  
   imgSize = size(mask);
   Wei3 = zeros(imgSize(1), imgSize(2), 3);
   
