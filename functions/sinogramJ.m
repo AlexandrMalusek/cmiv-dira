@@ -60,12 +60,16 @@ function [P,r] = sinogramJ(I,thetavec,rvec,filter)
 
 %error(nargchk(3,3,nargin))
 
-  % 0 = Matlab, 1 = C, 2 = OpenMP
+  % 0 = Matlab, 1 = C, 2 = OpenMP, 3 = OpenCL
+  % Matlab version is too slow, we don't use it. C is the default.
   global useCode
   switch (useCode)
     case 2
       [P,r] = sinogramJc_openmp(double(I),thetavec,rvec,filter);
       return;
+    case 3
+      [P,r] = sinogramJc_opencl(double(I),thetavec,rvec,filter);
+      return;	 
   end
 
 [P,r] = sinogramJc(double(I),thetavec,rvec,filter);

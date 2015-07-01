@@ -5,11 +5,14 @@ function [Ap] = computePolyProj(E, uE, N, p, mu)
   % 0 = Matlab, 1 = C, 2 = OpenMP, 3 = OpenCL
   global useCode
   switch (useCode)
-  case {1, 3}
+    case 1
       [Ap] = computePolyProjc(E, uE, N, p, mu);
       return;
-  case 2
+    case 2
       [Ap] = computePolyProjc_openmp(E, uE, N, p, mu);
+      return
+    case 3
+      [Ap] = computePolyProjc_opencl(E, uE, N, p, mu);
       return
   end
 
