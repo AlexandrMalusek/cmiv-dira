@@ -224,8 +224,14 @@ for iter = 1:numbIter
     end
   end
 
-  ApLow = computePolyProj(smd.ELow, uLow, smd.NLow, p, pmd.muLow);
-  ApHigh = computePolyProj(smd.EHigh, uHigh, smd.NHigh, p, pmd.muHigh);
+  switch (useCode) % 0 = Matlab, 1 = C, 2 = OpenMP, 3 = OpenCL
+    case {0, 1, 2}
+      ApLow = computePolyProj(smd.ELow, uLow, smd.NLow, p, pmd.muLow);
+      ApHigh = computePolyProj(smd.EHigh, uHigh, smd.NHigh, p, pmd.muHigh);
+    case 3
+      [ApLow, ApHigh] = computePolyProjc_opencl(smd.ELow, smd.EHigh, uLow, uHigh,...
+        smd.NLow, smd.NHigh, p, pmd.muLow, pmd.muHigh);
+  end
   clear('p');
   
   ZLow  = pmd.projLow + (MLow - ApLow);
