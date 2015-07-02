@@ -13,6 +13,12 @@
 pmd.savedIter = sort(pmd.savedIter);             % sort the vector
 numbIter = pmd.savedIter(length(pmd.savedIter)); % get the last element 
 
+% Check whether gDiraPlotFigures exists. If not, set it to a default va 
+if (0 == exist('gDiraPlotFigures'))
+  global gDiraPlotFigures;
+  gDiraPlotFigures = 1;
+end
+
 %% CT scan geometry and Joseph metod
 % ------------------------------------
 
@@ -67,8 +73,11 @@ pmd.recHighSet = cell(nSavedIter, 1);
 pmd.recLowSet{pmd.curIterIndex} = phm1;
 pmd.recHighSet{pmd.curIterIndex} = phm2;
 
-pmd.PlotRecLacImages(0);
-drawnow();
+% Plot reconstructed maps of linear attenuation coefficients
+if gDiraPlotFigures == 1
+  pmd.PlotRecLacImages(0);
+  drawnow();
+end
 
 %% Inital Tissue segmentation
 % 
@@ -112,13 +121,16 @@ if pmd.p3MD
   pmd.Wei3Set{pmd.curIterIndex} = Wei3;
 end
 
-if pmd.p2MD
-  pmd.PlotMassFractionsFromMd2(0);
+% Plot computed mass fractions from MD2 and MD3
+if gDiraPlotFigures == 1
+  if pmd.p2MD
+    pmd.PlotMassFractionsFromMd2(0);
+  end
+  if pmd.p3MD
+    pmd.PlotMassFractionsFromMd3(0);
+  end
+  drawnow();
 end
-if pmd.p3MD
-  pmd.PlotMassFractionsFromMd3(0);
-end
-drawnow();
 
 %% Iterate
 %
@@ -246,7 +258,8 @@ for iter = 1:numbIter
   pmd.recLowSet{pmd.curIterIndex} = recLow;
   pmd.recHighSet{pmd.curIterIndex} = recHigh;
   
-  if iter == numbIter
+  % Plot reconstructed maps of linear attenuation coefficients
+  if iter == numbIter && gDiraPlotFigures == 1
     pmd.PlotRecLacImages(iter);
     drawnow();
   end
@@ -288,21 +301,27 @@ for iter = 1:numbIter
   if pmd.p3MD
     pmd.Wei3Set{pmd.curIterIndex} = Wei3;
   end
-  if iter == numbIter
+
+  % Plot computed mass fractions from MD2 and MD3
+  if iter == numbIter && gDiraPlotFigures == 1
     if pmd.p2MD
       pmd.PlotMassFractionsFromMd2(iter);
     end
     if pmd.p3MD
       pmd.PlotMassFractionsFromMd3(iter);
     end
+    drawnow();
   end
-  drawnow();
 end
 
 %% Add material decomposition of prostate to resulting data.
 %
 pmd.Wei3SA{1} = MD3(AttE1mat, AttE2mat, pmd.Att3SA, pmd.Dens3SA, pmd.maskSA, 1);
-plotWei3(pmd.Wei3SA, pmd.name3SA);
+% Plot computed mass fractions from MD3
+if gDiraPlotFigures == 1
+  plotWei3(pmd.Wei3SA, pmd.name3SA);
+  drawnow();
+end
 pmd.WeiAv = MD3SP(mean(AttE1mat(pmd.maskSA)), mean(AttE2mat(pmd.maskSA)), pmd.Att3SA, pmd.Dens3SA);
 fprintf('Average mass fraction m1 = %f, m2 = %f and m3 = %f\n', pmd.WeiAv);
 
