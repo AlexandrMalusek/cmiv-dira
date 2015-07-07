@@ -41,18 +41,34 @@ function [img,H] = inverseRadon(p, degVec, interpolation, filter, frequencyScali
   
   function filt = designFilter(len, d)
 	   
-    order = max(64,2^nextpow2(2*len));
+    order = max(64, 2^nextpow2(2*len));
     
     n = 0:(order/2); % 'order' is always even. 
     filtImpResp = zeros(1,(order/2)+1); % 'filtImpResp' is the bandlimited ramp's impulse response (values for even n are 0)
     filtImpResp(1) = 1/4; % Set the DC term 
-    filtImpResp(2:2:end) = -1./((pi*n(2:2:end)).^2); % Set the values for odd n
+    filtImpResp(2:2:end) = -1 ./ ((pi*n(2:2:end)).^2); % Set the values for odd n
     filtImpResp = [filtImpResp filtImpResp(end-1:-1:2)]; 
-    filt = 2*real(fft(filtImpResp)); 
+    filt = 2 * real(fft(filtImpResp)); 
     filt = filt(1:(order/2)+1);
     
-    w = 2*pi*(0:size(filt,2)-1)/order;   % frequency axis up to Nyquist
+    w = 2*pi*(0:size(filt, 2)-1)/order;   % frequency axis up to Nyquist
     
-    filt(2:end) = filt(2:end) .*(1+cos(w(2:end)./d)) / 2;
-    filt(w>pi*d) = 0;                      % Crop the frequency response
+    filt(2:end) = filt(2:end) .* (1+cos(w(2:end)./d)) / 2;
+
+    switch filter
+      case 'cosine'
+        filt(2:end) = filt(2:end) .* cos(w(2:end)/(2*d));
+      case 'hann'
+        filt(2:end) = filt(2:end) .* (1+cos(w(2:end)./d)) / 2;
+      case 'hamming'
+        filt(2:end) = filt(2:end) .* (.54 + .46 * cos(w(2:end)/d));
+      case 'ram-lak'
+         % No filtering
+      case 'shepp-logan'
+        filt(2:end) = filt(2:end) .* (sin(w(2:end)/(2*d)) ./ (w(2:end)/(2*d)));
+      otherwise
+        error(message('inverseRadon:invalidFilter'))
+    end
+
+    filt(w > pi*d) = 0;                      % Crop the frequency response
     filt = [filt' ; filt(end-1:-1:2)'];    % Symmetry of the filter
