@@ -66,13 +66,6 @@ mexFunction(int nlhs, mxArray  *plhs[], int nrhs, const mxArray  *prhs[])
   cl_context context;
   cl_command_queue commandqueue;
   
-  /* Variables for reading kernel from file */
-  size_t kernelLength;
-  char *source;
-  FILE *theFile;
-  char c;
-  long howMuch;
-  
   static cl_program program_computePolyProj;
   static cl_kernel kernel_computePolyProj;
   
@@ -87,6 +80,47 @@ mexFunction(int nlhs, mxArray  *plhs[], int nrhs, const mxArray  *prhs[])
   size_t globalworksize;
   
   cl_event event;
+  
+  /* The kernel source code*/
+    /* Kernel to execute */
+  const char *source =   "\n" \
+"#define energies 140  \n" \
+"  \n" \
+"kernel void computePolyProj(__global int *ePtr, const double ue, __global double *nPtr,   \n" \
+"                              __global double *pPtr, __global double *muPtr,   \n" \
+"                              __global double *apPtr, const int e_Size,   \n" \
+"                                const int no_projections, const int mu_Size,   \n" \
+"                                const int total_size)   \n" \
+"{   \n" \
+"    int t_id = get_global_id(0);   \n" \
+"    \n" \
+"    int k;   \n" \
+"    int l;   \n" \
+"   \n" \
+"    __local int energyLevels[energies];   \n" \
+"   \n" \
+"    for(k=1;k<energies;++k)   \n" \
+"        energyLevels[k] = ePtr[k];   \n" \
+"     \n" \
+"    double temporarySum = 0;   \n" \
+"    double result = 0;   \n" \
+"   \n" \
+"    for(k = 1; k < e_Size-1; ++k)   \n" \
+"    {   \n" \
+"     temporarySum = 0;   \n" \
+"                  \n" \
+"     for(l = 0; l < no_projections; ++l)   \n" \
+"      {   \n" \
+"       temporarySum += -muPtr[l*mu_Size + energyLevels[k] - 1]*   \n" \
+"                         100*pPtr[l*total_size + t_id];   \n" \
+"      }   \n" \
+"     result += (energyLevels[k] * nPtr[k]) *   \n" \
+"                (energyLevels[k+1] - energyLevels[k-1]) *   \n" \
+"              exp(temporarySum);   \n" \
+"    }   \n" \
+"    apPtr[t_id] = -log(result/2/ue);   \n" \
+"}   \n" \
+"\n";
   
   /* Check validity of arguments */
   if (nrhs != 9)
@@ -222,39 +256,11 @@ mexFunction(int nlhs, mxArray  *plhs[], int nrhs, const mxArray  *prhs[])
   context = clCreateContext(0, 1, &device, NULL, NULL, &error);
   commandqueue = clCreateCommandQueue(context, device, 0, &error);
   
-  /* Read the kernel from file */
-  /* Count how much data to read from file */
-  theFile = fopen("../../../functions/computePolyProj.cl", "rb");
-  howMuch = 0;
-  c = 0;
-  while (c != EOF)
-  {
-    c = getc(theFile);
-    howMuch++;
-  }
-  fclose(theFile);
-  
-  /* Read the data from file */
-  source = (char *)malloc(howMuch);
-  theFile = fopen("../../../functions/computePolyProj.cl", "rb");
-  fread(source, howMuch-1, 1, theFile);
-  fclose(theFile);
-  source[howMuch-1] = 0;
-  kernelLength = strlen(source);
-  
   program_computePolyProj = clCreateProgramWithSource(context, 1, (const char **)&source, 
-                                                    &kernelLength, &error);
+                                                    NULL, &error);
 
   // build the program
   error = clBuildProgram(program_computePolyProj, 0, NULL, NULL, NULL, NULL);
-  if (error != CL_SUCCESS)
-  {
-    // write out the build log, then exit
-    char cBuildLog[10240];
-    clGetProgramBuildInfo(program_computePolyProj, device, CL_PROGRAM_BUILD_LOG,
-                          sizeof(cBuildLog), cBuildLog, NULL );
-    printf("\nBuild Log:\n%s\n\n", (char *)&cBuildLog);
-  }
   
   kernel_computePolyProj = clCreateKernel(program_computePolyProj, "computePolyProj", &error);
   

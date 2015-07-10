@@ -61,13 +61,6 @@ mexFunction(int nlhs, mxArray  *plhs[], int nrhs, const mxArray  *prhs[])
   cl_context context;
   cl_command_queue commandqueue;
   
-  /* Variables for reading kernel from file */
-  size_t kernelLength;
-  char *source;
-  FILE *theFile;
-  char c;
-  long howMuch;
-  
   static cl_program program_Backproject;
   static cl_kernel kernel_Backproject;
   
@@ -79,6 +72,54 @@ mexFunction(int nlhs, mxArray  *plhs[], int nrhs, const mxArray  *prhs[])
   size_t globalworksize;
   
   cl_event event;
+  
+  /*Kernel to execute */
+  const char *source =   "\n" \
+"__kernel void Backproject(const int N, const double ctr, const int numAngles,  \n" \
+"                         const int projection_length, __global double *thetaPtr,  \n" \
+"                         __global double *projections, __global double *img)  \n" \
+"  {   \n" \
+"  \n" \
+"  int k, y;  \n" \
+"  int input_row, output_row;  \n" \
+"    \n" \
+"  double xleft = -ctr;  \n" \
+"  double ytop  = ctr;  \n" \
+"  int center = projection_length/2;  \n" \
+"  \n" \
+"  int x = get_global_id(0);  \n" \
+"  double xcoord = xleft + x;  \n" \
+"  \n" \
+"  double cos_theta, sin_theta;  \n" \
+"  double t, fraction;  \n" \
+"  int a;  \n" \
+"  \n" \
+"  if(x <= N)  \n" \
+"  {  \n" \
+"    output_row = x*N;  \n" \
+"  \n" \
+"    for(k=0;k<numAngles;++k)  \n" \
+"    {  \n" \
+"      cos_theta = cos(thetaPtr[k]);  \n" \
+"      sin_theta = sin(thetaPtr[k]);  \n" \
+"  \n" \
+"      input_row = k * projection_length;  \n" \
+"      t = xcoord * cos_theta + ytop * sin_theta;  \n" \
+"  \n" \
+"      for(y=0;y<N;++y)  \n" \
+"      {  \n" \
+"        a  = ((int) (t + N)) - N;  \n" \
+"        fraction = t - a;  \n" \
+"        a +=center;  \n" \
+"  \n" \
+"        img[output_row + y] += fraction * (projections[input_row + a + 1] - projections[input_row + a]) +  \n" \
+"                               projections[input_row + a];  \n" \
+"        t -= sin_theta;  \n" \
+"      }  \n" \
+"    }  \n" \
+"  }  \n" \
+"}  \n" \
+"\n";
   
   /* Check validity of arguments */
   if (nrhs != 4)
@@ -127,37 +168,10 @@ mexFunction(int nlhs, mxArray  *plhs[], int nrhs, const mxArray  *prhs[])
   context = clCreateContext(0, 1, &device, NULL, NULL, &error);
   commandqueue = clCreateCommandQueue(context, device, 0, &error);
   
-  /* Read the kernel from file */
-  /* Count how much data to read from file */
-  theFile = fopen("../../../functions/Backproject.cl", "rb");
-  howMuch = 0;
-  c = 0;
-  while (c != EOF)
-  {
-    c = getc(theFile);
-    howMuch++;
-  }
-  fclose(theFile);
-  /* Read the data from file */
-  source = (char *)malloc(howMuch);
-  theFile = fopen("../../../functions/Backproject.cl", "rb");
-  fread(source, howMuch-1, 1, theFile);
-  fclose(theFile);
-  source[howMuch-1] = 0;
-  kernelLength = strlen(source);
-  
   program_Backproject = clCreateProgramWithSource(context, 1, (const char **)&source, 
-                                                    &kernelLength, &error);
+                                                    NULL, &error);
     
   error = clBuildProgram(program_Backproject, 0, NULL, NULL, NULL, NULL);
-  /* Write the compilation error if building the program failed */
-  if (error != CL_SUCCESS)
-  {
-    char cBuildLog[10240];
-    clGetProgramBuildInfo(program_Backproject, device, CL_PROGRAM_BUILD_LOG, 
-                          sizeof(cBuildLog), cBuildLog, NULL );
-    printf("\nBuild Log:\n%s\n\n", (char *)&cBuildLog);
-  }
   
   kernel_Backproject = clCreateKernel(program_Backproject, "Backproject", &error);
   
@@ -191,6 +205,4 @@ mexFunction(int nlhs, mxArray  *plhs[], int nrhs, const mxArray  *prhs[])
   clReleaseProgram(program_Backproject);
   clReleaseCommandQueue(commandqueue);
   clReleaseContext(context);
-  
-  free(source);
 }

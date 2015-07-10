@@ -202,13 +202,6 @@ sinogramJ(double *pPtr, double *iPtr, double *thetaPtr, double *rinPtr, int M, i
   cl_context context;
   cl_command_queue commandqueue;
   
-  /* Used for reading the kernel from file */ 
-  size_t kernelLength;
-  char *source;
-  FILE *theFile;
-  char c;
-  long howMuch;
-  
   static cl_program program_sinogramJ;
   static cl_kernel kernel_sinogramJ;
   
@@ -225,49 +218,75 @@ sinogramJ(double *pPtr, double *iPtr, double *thetaPtr, double *rinPtr, int M, i
   size_t globalworksize;
   
   cl_event event;
+  
+  /* Kernel to execute */
+  const char *source =   "\n" \
+"#define MAX(x,y) ((x) > (y) ? (x) : (y))  \n" \
+"#define MIN(x,y) ((x) < (y) ? (x) : (y))  \n" \
+"  \n" \
+"__kernel void sinogramJ(const int no_pixels, __global double *image,  \n" \
+"                        __global int *indices, __global int *xdistance,  \n" \
+"                        __global int *ydistance, __global double *cosine,  \n" \
+"                        __global double *sine, const int xOrigin,  \n" \
+"                        __global double *slope, const int M, __global double *projections)  \n" \
+"{   \n" \
+"  int i;  \n" \
+"  double pixelvalue;  \n" \
+"  double r, fraction;  \n" \
+"  int r_index;  \n" \
+"  double distance;  \n" \
+"  double leftdistance, rightdistance;  \n" \
+"  double slopedpixelvalue, leftpixel, rightpixel;  \n" \
+"  \n" \
+"  double max_r = 0;  \n" \
+"  \n" \
+"  int k = get_global_id(0);  \n" \
+"            \n" \
+"  for(i=0;i<M;++i)  \n" \
+"  {  \n" \
+"    projections[k*M + i] = 0;  \n" \
+"  }  \n" \
+"  \n" \
+"  for(i=0;i<no_pixels;++i)  \n" \
+"  {  \n" \
+"    pixelvalue = image[indices[i]];  \n" \
+"  \n" \
+"    r = xdistance[i]*cosine[k] + ydistance[i]*sine[k];        \n" \
+"  \n" \
+"    r += xOrigin;     \n" \
+"    r_index = (int) r;    \n" \
+"    fraction = r - r_index;  \n" \
+"  \n" \
+"    distance = fraction*slope[k];  \n" \
+"  \n" \
+"    leftdistance  = MAX(0, (1 - distance));  \n" \
+"    rightdistance = MAX(0, (1 + distance - slope[k]));  \n" \
+"  \n" \
+"    slopedpixelvalue = pixelvalue * slope[k];  \n" \
+"    leftpixel  = leftdistance  * slopedpixelvalue;  \n" \
+"    rightpixel = rightdistance * slopedpixelvalue;  \n" \
+"  \n" \
+"    projections[k*M + r_index + 0] += leftpixel;  \n" \
+"    projections[k*M + r_index + 1] += rightpixel;  \n" \
+"  \n" \
+"  }  \n" \
+"}  \n" \
+"\n";
 
   /* Initialization */
   error = clGetPlatformIDs(1, &platform, &no_platforms);
   error = clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &device, &no_devices); 
   error = clGetDeviceInfo(device, CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(size_t), &no_workgroups, NULL);
+
   context = clCreateContext(0, 1, &device, NULL, NULL, &error);
   commandqueue = clCreateCommandQueue(context, device, 0, &error);
-	
-  /* Reads the kernel from file */
-  /* Get file length */
-  theFile = fopen("../../../functions/sinogramJc.cl", "rb");
-  howMuch = 0;
-  c = 0;
-  while (c != EOF)
-  {
-    c = getc(theFile);
-    howMuch++;
-  }
-  fclose(theFile);
-	
-  /* Read the data */
-  source = (char *)malloc(howMuch);
-  theFile = fopen("../../../functions/sinogramJc.cl", "rb");
-  fread(source, howMuch-1, 1, theFile);
-  fclose(theFile);
-  source[howMuch-1] = 0;
-  kernelLength = strlen(source);
   
   program_sinogramJ = clCreateProgramWithSource(context, 1, (const char **)&source, 
-                                                    &kernelLength, &error);
+                                                    NULL, &error);
     
   error = clBuildProgram(program_sinogramJ, 0, NULL, NULL, NULL, NULL);
-  if (error != CL_SUCCESS)
-  {
-    char cBuildLog[10240];
-    clGetProgramBuildInfo(program_sinogramJ, device, CL_PROGRAM_BUILD_LOG, 
-                          sizeof(cBuildLog), cBuildLog, NULL );
-    printf("\nBuild Log:\n%s\n\n", (char *)&cBuildLog);
-  }
   
   kernel_sinogramJ = clCreateKernel(program_sinogramJ, "sinogramJ", &error);
-  
-  free(source);
   
   /* Create buffers for data */
   IMG_input   = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,  sizeof(double) * M * N, iPtr, NULL);
@@ -291,8 +310,9 @@ sinogramJ(double *pPtr, double *iPtr, double *thetaPtr, double *rinPtr, int M, i
   error |= clSetKernelArg(kernel_sinogramJ, 8, sizeof(cl_mem), &SLOPE_input);
   error |= clSetKernelArg(kernel_sinogramJ, 9, sizeof(int), &rSize);
   error |= clSetKernelArg(kernel_sinogramJ, 10, sizeof(cl_mem), &PROJ_output);
+  mexPrintf("arguments error: %i \n", error);
   
-  localworksize = 64;
+  localworksize = 32;
   globalworksize = numAngles;
 
   /* Enqueue and run */
