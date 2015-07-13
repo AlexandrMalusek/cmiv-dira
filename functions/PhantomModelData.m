@@ -194,6 +194,30 @@ classdef PhantomModelData < handle
       end
       hold off;
     end
+    
+    function [meanReg, stdReg, covReg] = meanStdCovForMaFrMd3InRois(pmd, centerX,...
+      centerY, radius, color, iter, triplet)
+      % Mean, standard deviatiation and covariance matrix for MD3 mass
+      % fractions in selected regions.
+	     
+      iterIndex = pmd.GetIterIndex(iter);
+      
+      N0 = size(pmd.recLowSet{iterIndex}, 1);  % image size of pixels
+      r2 = radius.^2;                          % radius squared
+      
+      % Process each region separately
+      for i = 1:length(radius)
+        [ix,iy] = meshgrid(1:N0, 1:N0);
+        R2 = (ix - centerX(i)).^2 + (iy - centerY(i)).^2;
+	for j = 1:3
+	  w = pmd.Wei3Set{iter+1}{triplet}(:,:,j);
+	  wa(:,j) = w(R2 < r2(i));
+          meanReg(i, j) = mean(wa(:,j));
+          stdReg(i, j) = std(wa(:,j));
+	end
+	covReg(:,:,i) = cov(wa);
+      end
+    end
 
     function cn = GetCondNumMdL3(pmd)
       % Return condition number of MD3 using LACs to get volume fractions.
