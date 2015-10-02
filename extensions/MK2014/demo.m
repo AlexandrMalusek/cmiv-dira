@@ -41,15 +41,15 @@ disp(X)
 
 %segmented image
 figure, imagesc(image), colormap gray;
-test(image, muscles, 'blue');
-test(image, prostate, 'red');
-test(image, bones, 'green');
-test(image, adipose, 'yellow');
+VisualizeSegmentation(image, muscles, 'blue');
+VisualizeSegmentation(image, prostate, 'red');
+VisualizeSegmentation(image, bones, 'green');
+VisualizeSegmentation(image, adipose, 'yellow');
 
 %ground truth
 figure, imagesc(image), colormap gray;
-test(image, musclesGT, 'blue');
-test(image, prostateGT, 'red');
-test(image, bonesGT, 'green');
-test(image, adiposeGT, 'yellow');
+VisualizeSegmentation(image, musclesGT, 'blue');
+VisualizeSegmentation(image, prostateGT, 'red');
+VisualizeSegmentation(image, bonesGT, 'green');
+VisualizeSegmentation(image, adiposeGT, 'yellow');
 toc

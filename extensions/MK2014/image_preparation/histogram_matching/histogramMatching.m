@@ -1,12 +1,16 @@
-function [ImageMatched] = histogramMatching(image, ref)
-  % Return an image whose intensities are changed so that the histograms of
-  % intensities of this and the reference image match.
+function [ImageMatched]=histogramMatching(image,ref)
+% Matches the histogram of the image to the histogram of the reference 
+% image. 
+%
+% EXAMPLE: 
+%    matched_image = histogramMatching(image,reference_image)
 
-  ref = rgb2gray(ref);
-  image = uint8(255*(image/(max(max(image)))));
-  
-  refBig = imresize(ref, 4, 'bicubic');
-  imageBig = imresize(image, 4, 'bicubic');
-  imageMatchedBig = imhistmatch(imageBig, refBig, 256);
-  ImageMatched = imresize(imageMatchedBig, 0.25, 'bicubic');
+ref=rgb2gray(ref);
+image=uint8(255*(image/(max(max(image)))));
+
+refBig=imresize(ref,4,'bicubic');
+imageBig=imresize(image,4,'bicubic');
+imageMatchedBig=imhistmatch(imageBig,refBig,256);
+ImageMatched=imresize(imageMatchedBig,0.25,'bicubic');
+
 end

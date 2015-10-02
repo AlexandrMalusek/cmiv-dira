@@ -1,55 +1,73 @@
-function [atlasMoved, atlasMovedAffine] = registration(image, atlas, bones)
-	 
-  %--------------------------------------------------------------------------
-  %AFFINE REGISTRATION-------------------------------------------------------
-  %create binary image and atlas
-  [imageBinary] = createBinary(image);
-  [atlasBinary] = createBinary(atlas);
-  
-  %rescale atlas and image
-  scale = 127 / length(image);
-  atlasBinarySmall = imresize(atlasBinary, scale);
-  imageBinarySmall = imresize(imageBinary, scale);
-  
-  %affine registration on the small image, translation to large image
-  [~, vxim, vyim] = moveSmallToBig(imageBinarySmall, atlasBinarySmall, atlasBinary);
-  
-  %create a grid for the small image
-  sx = length(imageBinarySmall);
-  sy = length(imageBinarySmall);
-  [x, y] = meshgrid(-(sx-1)/2:(sx-1)/2, -(sy-1)/2:(sy-1)/2);
-  
-  %create a grid for the large atlas
-  sx2 = length(atlas);
-  sy2 = length(atlas);
-  [x2, y2] = meshgrid(-(sx-(sx/sx2))/2:(sx/sx2):(sx-(sx/sx2))/2, -(sy-(sx/sx2))/2:(sy/sy2):(sy-(sx/sx2))/2);
-  
-  %the affine registration translated to the atlas
-  atlasMovedAffine = interp2(x2, y2, double(atlas), x2+vxim, y2+vyim);
-  
-  %--------------------------------------------------------------------------
-  %NON-RIGID BONE REGISTRATION-----------------------------------------------
-  
-  [~, bonesAtlas] = histc(atlasMovedAffine, [220 256]);
+
+function [vx,vy] = registration(image, atlas, num_scales,iter)
+% Registration function. This function performs an affine transformation in
+% order to match the atlas (second input) on the image (first input). The
+% registration starts on a coarse scale and is thereafter updated by
+% using finer scales.  
+%
+% Input: Patient image: Will be the image that the atlas is matched to
+%
+%        Atlas image:   Image that will be matched on the patient image
+%
+%        Number of scales: How many scales are used. Downsampling is done 
+%        by a factor of two
+%
+%        Iterations: Number of iterations on each scale
+
+% --------------------------------------------------------------------------
+% Create Scale-Pyramid------------------------------------------------------
+
+pyramidImage = cell(1,num_scales);
+pyramidAtlas = cell(1,num_scales);
+scale        = cell(1,num_scales);
+
+size_y = size(image,1);
+
+for k = 0:num_scales
+    scale{k+1} = min(size_y*2^(-k) +1,size_y)/size_y;
     
-  bonesAtlas = double(bonesAtlas);
-  bones = double(bones);
-  
-  %create grid for the large image
-  sx = length(image);
-  sy = length(image);
-  [x3, y3] = meshgrid(-(sx-1)/2:(sx-1)/2, -(sy-1)/2:(sy-1)/2);
-  
-  [vxim2, vyim2]=registerAtlas(bones, bonesAtlas);
-  atlasMovedNonRigid = interp2(x3, y3, atlasMovedAffine, x3+vxim2, y3+vyim2);
-  bonesAtlasMovedNonRigid = interp2(x3, y3, bonesAtlas, x3+vxim2, y3+vyim2);
-  
-  diceBonesAffine = dice(uint8(bones), uint8(bonesAtlas));
-  diceBonesNonRigid = dice(uint8(bones), uint8(bonesAtlasMovedNonRigid));
-  
-  if diceBonesAffine >= diceBonesNonRigid
-    atlasMoved = atlasMovedAffine;
-  else
-    atlasMoved = atlasMovedNonRigid;
-  end
+    pyramidImage{k+1} = double(imresize(image, scale{k+1}));
+    pyramidAtlas{k+1} = double(imresize(atlas, scale{k+1}));
+    
+end
+
+% --------------------------------------------------------------------------
+% Registration from coarse to fine scale------------------------------------
+
+smallAtlasMoved = pyramidAtlas{num_scales+1};
+ptot = zeros(6,1);
+
+for k = (num_scales+1):-1:2
+
+    p = registerAtlas(pyramidImage{k},smallAtlasMoved,iter(k));
+
+    %create a grid for the small image
+    [sy_old, sx_old] = size(pyramidAtlas{k});
+    [sy, sx] = size(pyramidAtlas{k-1});
+    [x,y] = meshgrid(-(sx-1)/2:(sx-1)/2,-(sy-1)/2:(sy-1)/2);
+    
+    if (k>2)
+        % Rescaling the translation
+        scale_factor = [sy/sy_old, sx/sx_old];
+        p(1:2) = scale_factor'.*p(1:2);
+        ptot = ptot + p;
+        
+        vx=1*ptot(1)+x*ptot(3)+y*ptot(4);
+        vy=1*ptot(2)+x*ptot(5)+y*ptot(6);
+        
+        % Upsamling of Motion Field
+    
+        smallAtlasMoved = interp2(x,y,double(pyramidAtlas{k-1}),x+vx,y+vy);
+        smallAtlasMoved(isnan(smallAtlasMoved)) = 0;
+        
+    else
+        % In the last Scale we don't need to rescale the translation
+        ptot = ptot + p;
+        
+        vx=1*ptot(1)+x*ptot(3)+y*ptot(4);
+        vy=1*ptot(2)+x*ptot(5)+y*ptot(6);
+    end 
+    
+end
+
 end
