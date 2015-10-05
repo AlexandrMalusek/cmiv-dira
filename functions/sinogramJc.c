@@ -2,11 +2,9 @@
 /* This routine computes a Joseph sinogram from a pixelized phantom. */
 /* In a Joseph sinogram, the interpolation kernel is designed        */
 /* relative to the phantom grid.                                     */
-/* Different interpolation filters are available.                    */
-/* The routine is based on Matlabs iradon.m.                         */
 /*                                                                   */
 /* Written by Maria Magnusson Seger 2003-04                          */
-/* Updated by Alexander Örtenberg   2014-11                          */
+/* Updated by Alexander Örtenberg   2015-04                          */
 /*-------------------------------------------------------------------*/
 #include <math.h>
 #include "mex.h"
@@ -30,23 +28,23 @@ static char rcs_id[] = "$Revision: 1.10 $";
 
 /* Output Arguments */
 #define  P      (plhs[0])
-#define R      (plhs[1])
+#define  R      (plhs[1])
 
 void 
 mexFunction(int nlhs, mxArray  *plhs[], int nrhs, const mxArray  *prhs[])
 {
-  int numAngles;    /* number of theta values */
-  int numProjval;    /* number of projection values */
-  double *thetaPtr;    /* pointer to theta values in radians */
-  double *rinPtr;    /* pointer to projection coordinate array */
-  double *pr1, *pr2;  /* help pointers used in loop */
-  double deg2rad;    /* conversion factor */
+  int numAngles;        /* number of theta values */
+  int numProjval;       /* number of projection values */
+  double *thetaPtr;     /* pointer to theta values in radians */
+  double *rinPtr;       /* pointer to projection coordinate array */
+  double *pr1, *pr2;    /* help pointers used in loop */
+  double deg2rad;       /* conversion factor */
   int k;                /* loop counter */
   int M, N;             /* input image size */
-  int xOrigin, yOrigin;  /* center of image */
-  int rFirst, rLast;  /* r-values for first and last row of output */
-  int rSize;      /* number of rows in output */
-  int interpolation;  /* interpolation type */
+  int xOrigin, yOrigin; /* center of image */
+  int rFirst, rLast;    /* r-values for first and last row of output */
+  int rSize;            /* number of rows in output */
+  int interpolation;    /* interpolation type */
 
   /* Check validity of arguments */
   if (nrhs < 4)
@@ -86,7 +84,9 @@ mexFunction(int nlhs, mxArray  *plhs[], int nrhs, const mxArray  *prhs[])
   pr2 = rinPtr;
   for (k = 0; k < numProjval; k++)
     *(pr2++) = *(pr1++);
+  
   rSize  = numProjval;
+  
   rFirst = (1-rSize)/2;
   rLast  = -rFirst;
 
@@ -133,22 +133,22 @@ sinogramJ(double *pPtr, double *iPtr, double *thetaPtr, double *rinPtr, int M, i
     int xOrigin, int yOrigin, int numAngles, int rFirst, int rSize, int interpolation)
 {
     
-  int x,y,k,i;    /* Loop variables */
-  int radius;     /* Radius of circle from which to use values */
-  double r;     /* Polar coordinate */
-  int r_index;    /* Polar coordinate as integer to index matrix */
-  double fraction;  /* Fraction of the r coordinate */
+  int x,y,k,i;                                   /* Loop variables */
+  int radius;                                    /* Radius of circle from which to use values */
+  double r;                                      /* Polar coordinate */
+  int r_index;                                   /* Polar coordinate as integer to index matrix */
+  double fraction;                               /* Fraction of the r coordinate */
   
-  double pixelvalue, slopedpixelvalue;  /* Pixelvalue from input image and scaled version */
-  double leftpixel, rightpixel;     /* Distribution for left and right pixel */
-  double distance, leftdistance, rightdistance; /* Distance to left and right pixel */
+  double pixelvalue, slopedpixelvalue;           /* Pixelvalue from input image and scaled version */
+  double leftpixel, rightpixel;                  /* Distribution for left and right pixel */
+  double distance, leftdistance, rightdistance;  /* Distance to left and right pixel */
   
-  int *xdistance, *ydistance;/*Distance in carthesian coordinates to image center */
-  int *pixelindices;         /* Store indices of pixels to calculate */
-  int xdist, ydist; /* temporary variables */
-  int pixelindex; /* Current index to store pixel data on */
-  double pixelradius; /* Radius of the pixel from center of the image */
-  
+  int *xdistance, *ydistance;                    /*Distance in carthesian coordinates to image center */
+  int *pixelindices;                             /* Store indices of pixels to calculate */
+  int xdist, ydist;                              /* temporary variables */
+  int pixelindex;                                /* Current index to store pixel data on */
+  double pixelradius;                            /* Radius of the pixel from center of the image */
+
   /* Precalculate the values for all angles */
   double angle;
   double *cosine, *sine, *slope;
@@ -178,7 +178,6 @@ sinogramJ(double *pPtr, double *iPtr, double *thetaPtr, double *rinPtr, int M, i
    *  and if it is a non-zero value. Only store its index and values if it
    *  passes both checks, or it does not contribute
    */
-
   for(y=0;y<M;++y)
   {    
     for(x=0;x<N;++x)
@@ -196,7 +195,6 @@ sinogramJ(double *pPtr, double *iPtr, double *thetaPtr, double *rinPtr, int M, i
       }
     }
   }
-  
 
   /* Calculate for every angle given as input*/
   for(k=0;k<numAngles;++k)
