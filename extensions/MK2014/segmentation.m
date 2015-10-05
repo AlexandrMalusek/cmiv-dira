@@ -1,15 +1,22 @@
 function [bones,adipose,prostate,muscles] = segmentation(image,atlas,histogramReference)
 %This is an automated segmentation algorithm.
 %Inputs:
-%     image: the image that are to be segmented
-%     atlas: the atlas used for the segmentation
-%     histogramReference: the image used for the histogram matching
+%     image:               - The image that are to be segmented
+%
+%     atlas:               - The atlas used for the segmentation
+%
+%     histogramReference:  - The image used for the histogram matching
 %
 % Outputs:
-%     bones: the bones of the CT-slice represented by a binary image
-%     adipose: the adipose tissue of the CT-slice represented by a binary image
-%     prostate: the prostate of the CT-slice represented by a binary image
-%     muslces: the muscles of the CT-slice represented by a binary image
+%     bones:    - The bones of the CT-slice represented by a binary image
+%
+%     adipose:  - The adipose tissue of the CT-slice represented by a 
+%                 binary image
+%
+%     prostate: - The prostate of the CT-slice represented by a binary 
+%                 image
+%
+%     muslces:  - The muscles of the CT-slice represented by a binary image
 
 
 % Preprocessing of the image

@@ -5,14 +5,21 @@ function [vx,vy] = registration(image, atlas, num_scales,iter)
 % registration starts on a coarse scale and is thereafter updated by
 % using finer scales.  
 %
-% Input: Patient image: Will be the image that the atlas is matched to
+% Input: Patient image:    Will be the gray scale image that the atlas is 
+%                          matched to. Needs to be double or single.
 %
-%        Atlas image:   Image that will be matched on the patient image
+%        Atlas image:      Image that will be matched on the patient image.
+%                          Needs to be double or single.
 %
-%        Number of scales: How many scales are used. Downsampling is done 
-%        by a factor of two
+%        Number of scales: The number of scales used for the registration. 
+%                          The downsampling is done by a factor of two.
 %
-%        Iterations: Number of iterations on each scale
+%        Iterations:       A vector with the number of iterations on each 
+%                          scale. The first element of the vector is 
+%                          corresponding to the number of iterations on the
+%                          finest scale (no downsampling) and element k 
+%                          corresponds to the number of iterations on scale 
+%                          k-1.
 
 % --------------------------------------------------------------------------
 % Create Scale-Pyramid------------------------------------------------------

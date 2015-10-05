@@ -3,8 +3,8 @@ function image = fillSmallHoles(original,size)
 %
 % Input: - binary image
 %
-%        - max size of the holes. Holes smaller and equal to the max size
-%          are filled by the function.
+%        - Integer value corresponding to the max size of the holes. Holes 
+%          smaller and equal to the max size are filled by the function.
 %       
 
 

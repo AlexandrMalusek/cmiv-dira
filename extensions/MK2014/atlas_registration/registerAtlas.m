@@ -9,7 +9,9 @@ function ptot = registerAtlas(image,atlas,iter)
 %
 %         Number of iterations
 %
-% Output: The p vector describing the transformation
+% Output: The p vector is describing the transformation. The first two
+%         parameters are the translation and the other four are a matrix
+%         for translation and scaling.
 %
 % EXAMPLE:
 %  ptot = registerAtlas(image,atlas,20);

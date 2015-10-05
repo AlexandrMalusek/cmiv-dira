@@ -4,8 +4,13 @@ function [seed]=getAdiposeSeed(adipose)
 % erosion to point. 
 %
 % For the picking of the seeds is the image divided in 16 equal sized parts
-% in which one seed is picked. The output is a 2 x N vector where N is the 
-% number of found seed points.
+% in which one seed is picked. 
+%
+% Input:  - Binary image showing the adipose tissue
+%
+% Output: - The output is a 2 x N vector with the y and x coordinate of the 
+%           seed points, where N is the number of found seed points.
+
 
 se = strel('disk',3);
 adipose=imerode(adipose,se);

@@ -4,8 +4,14 @@ function [labeledBones, bonesFilled,adiposeRegion]...
 % assumed that the CT image is enhanced by the histogram matching. If
 % another reference image is used than the image that is default in the
 % MK2014, the threshold values will need to be modified. 
+%
+% Input:   - CT image:       Image that is enhanced by the histogram
+%                            matching. The image format needs to be double
+%                            or single and the values of the image needs to
+%                            be in the range 0 to 255.
 % 
-% Outputs: - labeledBones:   Is used in order to get the seeds of the bones 
+% Outputs: - labeledBones:   Image where each bone is labeled seperatly. Is
+%                            used in order to get the seeds of the bones 
 %
 %          - bonesFilled:    Binary image showing the position of the bones
 %
