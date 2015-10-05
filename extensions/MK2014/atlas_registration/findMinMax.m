@@ -1,16 +1,21 @@
 function out = findMinMax(binaryImage)
-% Create a struct with the centerpoints, min and max positions in x and y
-% direction of the binary volume. 
+% The function creates a structure that stores the coordinates of the 
+% body center in the binary image as well as the largest and the lowest 
+% coordinates of the body.
 %
-% EXAMPLE:
-% struct = findMinMax(binary_image)
+% Input: Binary image
 %
-% Stored variables are:
+% The stored variables in the struct are:
 %
 %   center_x, center_y:    x and y coordinate of the center
-%   max_x, min_x:          highest and lowest x coordinate that's 1
-%   max_y, min_y:          highest and lowest y coordinate that's 1
+%   max_x, min_x:          largest and lowest x coordinate of the body
+%   max_y, min_y:          largest and lowest y coordinate of the body
 %   
+% 
+% EXAMPLE:
+% struct = findMinMax(binary_image)
+
+
 
 [body_y, body_x] = find(binaryImage == 1);  
 

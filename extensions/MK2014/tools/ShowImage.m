@@ -1,6 +1,10 @@
 function ShowImage(im,fig_numb)
-% Function for plotting a grayscale image. Input is the image and the
-% figure number. The function set the axis to image and colormap to gray
+% Function for plotting a grayscale image. The function set the axis to 
+% image and colormap to gray
+%
+% Input:  - Gray scale image
+% 
+%         - Figure numbe
 %
 % Written by Julius Jeuthe, 2015 
 

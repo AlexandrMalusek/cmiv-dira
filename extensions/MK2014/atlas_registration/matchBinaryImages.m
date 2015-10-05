@@ -1,8 +1,10 @@
 function atlasMoved = matchBinaryImages(BinaryImage, BinaryAtlas,atlas)
-% Match two binary images by moving the binary region of the second input
-% (the atlas) to the position of the first input and rescaling it to match
-% it. The matching is done by looking at the edgepoints of the volume. To
-% get a full affine transformation use registration instead. 
+% Match two binary images by moving the binary region of the atlas to the 
+% position of the patient body. The binary regions are matched by first 
+% calculating the lowest and highest value of the binary region (body of 
+% the patient) in x and y direction followed by translating and scaling the
+% atlas to match those.
+% 
 %
 % Inputs:   - Binary image: The binary representation of the patients body. 
 %
@@ -10,9 +12,12 @@ function atlasMoved = matchBinaryImages(BinaryImage, BinaryAtlas,atlas)
 %                    atlas.
 %
 %           - Atlas: The atlas that should be moved by the transformation.
-%                    The binary atlas is matched in the binary image and
-%                    thereafter is the transformation applied on the real
-%                    atlas.
+%                    It is expected that the atlas is of type double or 
+%                    single. It is also expected that all three inputs
+%                    have the same image size.
+%
+% Output:   - Moved Atlas: Atlas matched according to the algorithm.
+
 
 % Create a structure element with the min and max position of the images 
 im_str = findMinMax(BinaryImage);
