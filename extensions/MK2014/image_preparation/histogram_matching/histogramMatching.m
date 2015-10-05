@@ -13,7 +13,7 @@ function ImageMatched = histogramMatching(image,ref)
 % EXAMPLE: 
 %    matched_image = histogramMatching(image,reference_image)
 
-if(size(ref,3)==1)
+if(size(ref,3)==3)
     ref=rgb2gray(ref);
 end
 image=uint8(255*(image/(max(max(image)))));
