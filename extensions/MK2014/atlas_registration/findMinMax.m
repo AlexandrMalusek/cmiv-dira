@@ -1,15 +1,15 @@
 function out = findMinMax(binaryImage)
 % The function is create a struct that stores the coordinates of the mass 
-% point of the binary image as well as the coordinates of the highest and 
-% lowest pixel with value 1. 
+% point of the binary image as well as the coordinates with the highest and 
+% lowest index having the value 1. 
 %
 % Input: Binary image
 %
 % The stored variables in the struct are:
 %
 %   center_x, center_y:    x and y coordinate of the center
-%   max_x, min_x:          highest and lowest x coordinate that's 1
-%   max_y, min_y:          highest and lowest y coordinate that's 1
+%   max_x, min_x:          highest and lowest x coordinate with value 1
+%   max_y, min_y:          highest and lowest y coordinate with value 1
 %   
 % 
 % EXAMPLE:

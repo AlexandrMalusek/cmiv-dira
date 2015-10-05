@@ -6,8 +6,8 @@ function [imageBinaryFilled]= createBinary(image)
 % the patient in the CT image and the atlas. Thereafter the atlas is
 % matched to the patients body by translating and scaling it. 
 %
-% Input: A grayscale image. The thresholds in the functions are set to 
-%        match the histogram matched image.
+% Input: A grayscale image with format double or single. The thresholds in 
+%        The function expect the values to be in the range 0 and 255. 
 %
 % Output: Binary image showing the patients body.
 

@@ -4,11 +4,12 @@ function deformedContour = deformableModelProstate(image, atlas)
 % activecontour is used with the Chan-Vese setting to adapt the initial 
 % guess to the image content.
 %
-% Inputs: CT (gray scale) image of the patient.  
+% Inputs: CT (gray scale) image of the patient. 
 %
 %         The atlas: The function segment the prostate from the atlas
 %         followed by using the deforable model to find the final position
-%         of the prostate
+%         of the prostate. Needs to be either double or single and the
+%         values need to be in the range 0 to 255.
 % 
 % Output: Binary image showing the prostate. 
 %

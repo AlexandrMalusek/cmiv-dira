@@ -1,4 +1,3 @@
-
 function ptot = registerAtlas(image,atlas,iter)
 % This program performs the affine registration.  
 %

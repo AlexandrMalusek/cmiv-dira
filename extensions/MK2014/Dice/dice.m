@@ -5,8 +5,8 @@ function diceValue = dice(image, groundTruth)
 %
 % Input: Segmentation result. For instance the binary image of the bones
 %
-%        The ground thruth needs is abinary image showing the true position
-%        of a tissue. 
+%        The ground thruth needs is a binary image showing the true 
+%        position of the tissue.  
 %
 % Output: Dice cooficient. 
 

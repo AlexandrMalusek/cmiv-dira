@@ -1,9 +1,9 @@
 function atlasMoved = matchBinaryImages(BinaryImage, BinaryAtlas,atlas)
-% Match two binary images by moving the binary region of the second input
-% (the atlas) to the position of the first input and rescaling it to match
-% it. The binary regions are matched by first calculating the lowest and 
-% highest value of the binary region (body of the patient) in x and y 
-% direction followed by translating and scaling the atlas to match those.
+% Match two binary images by moving the binary region of the atlas to the 
+% position of the patient body. The binary regions are matched by first 
+% calculating the lowest and highest value of the binary region (body of 
+% the patient) in x and y direction followed by translating and scaling the
+% atlas to match those.
 % 
 %
 % Inputs:   - Binary image: The binary representation of the patients body. 

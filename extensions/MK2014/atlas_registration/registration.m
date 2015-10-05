@@ -5,8 +5,8 @@ function [vx,vy] = registration(image, atlas, num_scales,iter)
 % registration starts on a coarse scale and is thereafter updated by
 % using finer scales.  
 %
-% Input: Patient image:    Will be the gray scale image that the atlas is 
-%                          matched to. Needs to be double or single.
+% Input: Patient image:    The gray scale image that the atlas is matched 
+%                          to. Needs to be double or single.
 %
 %        Atlas image:      Image that will be matched on the patient image.
 %                          Needs to be double or single.

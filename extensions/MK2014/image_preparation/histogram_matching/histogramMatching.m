@@ -3,10 +3,11 @@ function ImageMatched = histogramMatching(image,ref)
 % reference image. 
 %
 % Input:  - Image: The image on which the histogram matching should be
-%           performed on. 
+%           performed on. The image needs to be uint8 or double in the
+%           range 0 to 255. 
 %
-%         - Reference image: The reference image should be an uint8 image
-%           with values in the intervall 0 to 255.
+%         - Reference image: The reference image should have the format
+%           uint8.
 %
 % Output: - Histogram matched image. The image is in the format uint8
 %
