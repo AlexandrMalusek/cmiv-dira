@@ -1,9 +1,9 @@
 function VisualizeSegmentation(E,I,color)
-% Function for overlayer the segmentation results on the active image. 
+% Plot the segmentation results on the active image. 
 %
-% Input: - Image to overlay on
-%        - Binary image showing the segmentation
-%        - Color the segmentation should be shown in. Possible colors are
+% Input: - Image to plot the results on
+%        - Segmented binary image
+%        - Color of the segmented region. Possible colors are
 %          'red', 'green', 'blue', 'yellow', 'margenta' and 'cyan'
 
 

@@ -1,22 +1,24 @@
 function [labeledBones, bonesFilled,adiposeRegion]...
     =automatedThresholding(image)
 % Function for performing automated thresholding of a CT image. It is
-% assumed that the CT image is enhanced by the histogram matching. If
-% another reference image is used than the image that is default in the
-% MK2014, the threshold values will need to be modified. 
+% assumed that the CT image is enhanced by the histogram matching. The
+% threshold values are defined for the reference image. A different
+% reference image may need different threshold values. 
 %
 % Input:   - CT image:       Image that is enhanced by the histogram
 %                            matching. The image format needs to be double
-%                            or single and the values of the image needs to
-%                            be in the range 0 to 255.
+%                            or single precision and the values of the image 
+%                            need to be in the range 0 to 255.
 % 
-% Outputs: - labeledBones:   Image where each bone is labeled seperatly. Is
-%                            used in order to get the seeds of the bones 
+% Outputs: - labeledBones:   Image where each bone is labeled seperately. 
+%                            It is used in order to get the seeds of the 
+%                            bones.
 %
-%          - bonesFilled:    Binary image showing the position of the bones
+%          - bonesFilled:    Binary image containing the position of the 
+%                            bones
 %
-%          - adiposeRegion:  Binary adipose image. Is later used to get the
-%                            seeds for the region growing
+%          - adiposeRegion:  Binary adipose image. It is later used to get 
+%                            the seeds for the region growing
 
 %threshold image at set ranges
 [~, imageThreshold]=histc(image,[0 6 75 180 256]);

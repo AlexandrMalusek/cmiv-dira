@@ -1,6 +1,6 @@
 function [seeds]=getBoneSeeds(bonesLabeled)
 % Function to get the bone seeds. Shrinking to point is performed on the
-% labeled bone image (input). One to two pixels are chosen for each bone.
+% labeled bone image (input). One to two pixels are taken for each bone.
 %
 % Input:    - Image showing the labeled bones
 %

@@ -1,13 +1,12 @@
 function [imageNoTable]=removeTable(image)
-% Removes all objects but the biggest object (the patient) in the image.
-% The area surrounding the patient is considered air and set to -100 to
-% increase the contrast between adispose tissue and air.
+% Removes all but the biggest object (the patient) in the image.
+% The area surrounding the patient is set to -100 to increase the contrast 
+% between adispose tissue and air.
 %
 % Input:  CT image: The image must either have the format double or single 
 %                   and have values in the range 0 to 255. 
 %                   
-% Output: CT image without table and air set to -100. Input format is the
-%         same as input
+% Output: CT image containing the body of the patient. 
 
 
 %remove CT-table

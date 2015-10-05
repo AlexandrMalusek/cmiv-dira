@@ -1,9 +1,8 @@
 function newIm = VisualizeSegmentationGray(im,mask,tissue)
-% This function visualize the segmented tissues by changed the color of the
-% image to the gray scale values used in the atlas images. Input is the
-% image that was segmented, the result from the segmentation (binary image)
-% and the name of the tissue. 
-% 
+% Redefine the values of an image inside a region defined by the mask. 
+% The redefined values are the same as for the atlas and that result in the
+% same gray levels in the image.  
+%
 % Input:    - image: Segmented gray scale image
 %
 %           - segmentation result: binary mask showing the segmentation 

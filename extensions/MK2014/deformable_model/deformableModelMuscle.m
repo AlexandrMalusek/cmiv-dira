@@ -1,16 +1,15 @@
-function [deformed_contour]=deformableModelMuscle(image, contour)
-% Deformable model used in order to segment the muscles. For this the
-% matlab function activecontour where used with the Chan-Vese setting.
+function [deformed_mask]=deformableModelMuscle(image, mask)
+% Deformable model used for the segmention of muscles. 
 %
-% Inputs: Gray scale image showing the patient.
+% Inputs: Image:    Gray scale image of the patient.
 % 
-%         The binary image showing the initial guess of the muscles.
+%         mask:  The binary image of the initial position of the muscles.
 %
-% Output: Binary image showing the deformed initial guess. 
+% Output: Binary image containing the segmented muscles. 
 %
-% EXAMPLE:  deformed_guess = deformableModelMuscle(image, initial_guess);
+% EXAMPLE:  deformed_guess = deformableModelMuscle(image, initial_mask);
 % 
 
-deformed_contour = activecontour(image,contour,300,'Chan-Vese',7);
+deformed_mask = activecontour(image,mask,300,'Chan-Vese',7);
 
 end

@@ -1,10 +1,10 @@
 function [seed]=getAdiposeSeed(adipose)
 % Function for getting a vector with seed points from a binary image. The
-% binary regions are first eroded one time to remove spurs followed by
-% erosion to point. 
+% binary regions are first eroded once to remove spurs followed by
+% an erosion to point. 
 %
-% For the picking of the seeds is the image divided in 16 equal sized parts
-% in which one seed is picked. 
+% For the picking of the seeds the image is divided to 16 equally sized
+% parts. In each part one seed is taken.
 %
 % Input:  - Binary image showing the adipose tissue
 %
