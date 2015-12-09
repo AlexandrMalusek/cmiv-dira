@@ -14,15 +14,14 @@ function [imageNoTable]=removeTable(image)
 imageBinaryFilled=imfill(imageBinary);
 
 % Removal of all obejcts but the biggest one
-imageBinaryNoTable=bwlabel(imageBinaryFilled,4);
-imageLabeledHistogram=imhist(uint8(imageBinaryNoTable));
+imageLabled=bwlabel(imageBinaryFilled,4);
+imageLabeledHistogram=imhist(uint8(imageLabled));
 imageLabeledHistogram(1)=0;
 [~, largestArea]=max(imageLabeledHistogram);
 largestArea=largestArea-1;
-imageBinaryNoTable(imageBinaryNoTable~=largestArea)=0;
+imageLabled(imageLabled~=largestArea)=0;
 
-% imageBinaryNoTable = double(bwareaopen(imageBinaryFilled, 20000));
-imageNoTable=imageBinaryNoTable.*double(image);
+imageNoTable = logical(imageLabled).*double(image);
 
 imageNoTable(imageNoTable==0) = -100;
 
