@@ -150,6 +150,34 @@ for iter = 1:numbIter
      pmd.curIterIndex = pmd.curIterIndex + 1;
   end
 
+  % Calculate volume fractions v_i (Vol3) from mass fractions w_i (Wei3):
+  %   v_i(x,y) = w_i(x,y) * rho(x,y) / rho_i
+  %   where rho(x,y) = 1/(w_1(x,y)/rho_1 + w_2(x,y)/rho_2 + w_3(x,y)/rho_3)
+  for i = 1:length(tissue3)
+    if i == 1
+      % Temporary workaround: Handle air outside the imaged object.
+      % lipidAirMask: air outside the body AND inside the CT-scanner specific "circle"
+      % tissue3{1}: the union of the body soft tissue AND the air outside the body
+      % In the future a different solution will be used:
+      % - air outside the body will be decomposed to air + soft tissue using 2MD
+      % - CT table has to be segmented out
+      lipidAirMask = ((AttE1mat < pmd.Att3{1}(1,1)) | (AttE2mat < pmd.Att3{1}(2,1))) .* tissue3{1};
+      Vol3{i}(:,:,1) = Wei3{i}(:,:,1) ./ ...
+        (Wei3{i}(:,:,1)/pmd.Dens3{i}(1) + Wei3{i}(:,:,2)/pmd.Dens3{i}(2) + Wei3{i}(:,:,3)/pmd.Dens3{i}(3) + eps) /...
+        pmd.Dens3{1}(1) .* (tissue3{1} - lipidAirMask) + Wei3{1}(:,:,1) .* lipidAirMask;
+    else
+      Vol3{i}(:,:,1) = Wei3{i}(:,:,1) ./ ...
+        (Wei3{i}(:,:,1)/pmd.Dens3{i}(1) + Wei3{i}(:,:,2)/pmd.Dens3{i}(2) + Wei3{i}(:,:,3)/pmd.Dens3{i}(3) + eps) /...
+        pmd.Dens3{1}(1); 
+    end
+    Vol3{i}(:,:,2) = Wei3{i}(:,:,2) ./ ...
+      (Wei3{i}(:,:,1)/pmd.Dens3{i}(1) + Wei3{i}(:,:,2)/pmd.Dens3{i}(2) + Wei3{i}(:,:,3)/pmd.Dens3{i}(3) + eps) /...
+      pmd.Dens3{1}(2);
+    Vol3{i}(:,:,3) = Wei3{i}(:,:,3) ./ ...
+      (Wei3{i}(:,:,1)/pmd.Dens3{i}(1) + Wei3{i}(:,:,2)/pmd.Dens3{i}(2) + Wei3{i}(:,:,3)/pmd.Dens3{i}(3) + eps) /...
+      pmd.Dens3{1}(3);
+  end
+
   disp('Calculating line integrals...')
   
   if pmd.p2MD
@@ -168,7 +196,7 @@ for iter = 1:numbIter
     p3 = cell(length(Wei3), 1);
     for j = 1:length(Wei3)
       for i = 1:3
-        porig3 = sinogramJ(Wei3{j}(:, :, i), degVec, r2Vec, smd.interpolation)';
+        porig3 = sinogramJ(Vol3{j}(:, :, i), degVec, r2Vec, smd.interpolation)';
         X = size(porig3, 2);
         p3{j}(:, :, i) = porig3(:,1+(X-Nr2)/2:X-(X-Nr2)/2)';
         p3{j}(:, :, i) = pixsiz * p3{j}(:, :, i);
