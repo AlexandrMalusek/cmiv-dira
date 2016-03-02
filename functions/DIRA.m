@@ -88,25 +88,29 @@ pmd.tissue3Set = cell(nSavedIter);
 pmd.tissue2Set{1} = tissue2;
 pmd.tissue3Set{1} = tissue3;
 
+nTissueDoublets = length(tissue2);
+nTissueTriplets = length(tissue3);
+
+
 % Tissue decomposition
 disp('Decomposing tissues...')
 AttE1mat = 0.01*phm1;		   % Change 1/m to 1/cm
 AttE2mat = 0.01*phm2;
 
 if pmd.p2MD
-  dens = cell(length(tissue2), 1);
-  Wei2 = cell(length(tissue2), 1);
-  for i = 1:length(tissue2)
-    [Wei2{i}, dens{i}] = MD2(AttE1mat, AttE2mat, pmd.Att2{pmd.tissueOrder2(i)},...
-      pmd.Dens2{pmd.tissueOrder2(i)}, tissue2{i});
+  dens = cell(nTissueDoublets, 1);
+  Wei2 = cell(nTissueDoublets, 1);
+  for id = 1:nTissueDoublets  % id = doublet index
+    [Wei2{id}, dens{id}] = MD2(AttE1mat, AttE2mat, pmd.Att2{pmd.tissueOrder2(id)},...
+      pmd.Dens2{pmd.tissueOrder2(id)}, tissue2{id});
   end
 end
 
 if pmd.p3MD
-  Wei3 = cell(length(tissue3), 1);
-  for i = 1:length(tissue3)
-    Wei3{i} = MD3(AttE1mat, AttE2mat, pmd.Att3{pmd.tissueOrder3(i)},...
-      pmd.Dens3{pmd.tissueOrder3(i)}, tissue3{i}, 1);
+  Wei3 = cell(nTissueTriplets, 1);
+  for it = 1:nTissueTriplets  % it = triplet index
+    Wei3{it} = MD3(AttE1mat, AttE2mat, pmd.Att3{pmd.tissueOrder3(it)},...
+      pmd.Dens3{pmd.tissueOrder3(it)}, tissue3{it}, 1);
   end
 end
 
@@ -153,8 +157,8 @@ for iter = 1:numbIter
   % Calculate volume fractions v_i (Vol3) from mass fractions w_i (Wei3):
   %   v_i(x,y) = w_i(x,y) * rho(x,y) / rho_i
   %   where rho(x,y) = 1/(w_1(x,y)/rho_1 + w_2(x,y)/rho_2 + w_3(x,y)/rho_3)
-  for i = 1:length(tissue3)
-    if i == 1
+  for it = 1:nTissueTriplets  % it = triplet index
+    if it == 1
       % Temporary workaround: Handle air outside the imaged object.
       % lipidAirMask: air outside the body AND inside the CT-scanner specific "circle"
       % tissue3{1}: the union of the body soft tissue AND the air outside the body
@@ -162,44 +166,48 @@ for iter = 1:numbIter
       % - air outside the body will be decomposed to air + soft tissue using 2MD
       % - CT table has to be segmented out
       lipidAirMask = ((AttE1mat < pmd.Att3{1}(1,1)) | (AttE2mat < pmd.Att3{1}(2,1))) .* tissue3{1};
-      Vol3{i}(:,:,1) = Wei3{i}(:,:,1) ./ ...
-        (Wei3{i}(:,:,1)/pmd.Dens3{i}(1) + Wei3{i}(:,:,2)/pmd.Dens3{i}(2) + Wei3{i}(:,:,3)/pmd.Dens3{i}(3) + eps) /...
-        pmd.Dens3{1}(1) .* (tissue3{1} - lipidAirMask) + Wei3{1}(:,:,1) .* lipidAirMask;
+      Vol3{it}(:,:,1) = Wei3{it}(:,:,1) ./ ...
+        (Wei3{it}(:,:,1)/pmd.Dens3{it}(1) + Wei3{it}(:,:,2)/pmd.Dens3{it}(2) + Wei3{it}(:,:,3)/pmd.Dens3{it}(3) + eps) /...
+        pmd.Dens3{it}(1) .* (tissue3{1} - lipidAirMask) + Wei3{1}(:,:,1) .* lipidAirMask;
     else
-      Vol3{i}(:,:,1) = Wei3{i}(:,:,1) ./ ...
-        (Wei3{i}(:,:,1)/pmd.Dens3{i}(1) + Wei3{i}(:,:,2)/pmd.Dens3{i}(2) + Wei3{i}(:,:,3)/pmd.Dens3{i}(3) + eps) /...
-        pmd.Dens3{1}(1); 
+      Vol3{it}(:,:,1) = Wei3{it}(:,:,1) ./ ...
+        (Wei3{it}(:,:,1)/pmd.Dens3{it}(1) + Wei3{it}(:,:,2)/pmd.Dens3{it}(2) + Wei3{it}(:,:,3)/pmd.Dens3{it}(3) + eps) /...
+        pmd.Dens3{it}(1); 
     end
-    Vol3{i}(:,:,2) = Wei3{i}(:,:,2) ./ ...
-      (Wei3{i}(:,:,1)/pmd.Dens3{i}(1) + Wei3{i}(:,:,2)/pmd.Dens3{i}(2) + Wei3{i}(:,:,3)/pmd.Dens3{i}(3) + eps) /...
-      pmd.Dens3{1}(2);
-    Vol3{i}(:,:,3) = Wei3{i}(:,:,3) ./ ...
-      (Wei3{i}(:,:,1)/pmd.Dens3{i}(1) + Wei3{i}(:,:,2)/pmd.Dens3{i}(2) + Wei3{i}(:,:,3)/pmd.Dens3{i}(3) + eps) /...
-      pmd.Dens3{1}(3);
+    Vol3{it}(:,:,2) = Wei3{it}(:,:,2) ./ ...
+      (Wei3{it}(:,:,1)/pmd.Dens3{it}(1) + Wei3{it}(:,:,2)/pmd.Dens3{it}(2) + Wei3{it}(:,:,3)/pmd.Dens3{it}(3) + eps) /...
+      pmd.Dens3{it}(2);
+    Vol3{it}(:,:,3) = Wei3{it}(:,:,3) ./ ...
+      (Wei3{it}(:,:,1)/pmd.Dens3{it}(1) + Wei3{it}(:,:,2)/pmd.Dens3{it}(2) + Wei3{it}(:,:,3)/pmd.Dens3{it}(3) + eps) /...
+      pmd.Dens3{it}(3);
   end
 
   disp('Calculating line integrals...')
   
   if pmd.p2MD
-    p2 = cell(length(Wei2), 1);
-    for j = 1:length(Wei2)
-      for i = 1:2
-        porig2 = sinogramJ(Wei2{j}(:, :, i).*dens{pmd.tissueOrder2(j)}, degVec, r2Vec, smd.interpolation)';
+    % l_i is the line integral of mass fraction multiplied with the density of ith component,
+    % l_i = \int w_i(x,y)*rho_i(x,y) ds
+    p2 = cell(nTissueDoublets, 1);
+    for id = 1:nTissueDoublets  % id = doublet index
+      for ic = 1:2  % ic = doublet component index
+        porig2 = sinogramJ(Wei2{id}(:, :, ic).*dens{pmd.tissueOrder2(id)}, degVec, r2Vec, smd.interpolation)';
         X = size(porig2, 2);
-        p2{j}(:, :, i) = porig2(:,1+(X-Nr2)/2:X-(X-Nr2)/2)';
-        p2{j}(:, :, i) = pixsiz * p2{j}(:, :, i);
+        p2{id}(:, :, ic) = porig2(:,1+(X-Nr2)/2:X-(X-Nr2)/2)';
+        p2{id}(:, :, ic) = pixsiz * p2{id}(:, :, ic);
       end
     end
   end
   
   if pmd.p3MD
-    p3 = cell(length(Wei3), 1);
-    for j = 1:length(Wei3)
-      for i = 1:3
-        porig3 = sinogramJ(Vol3{j}(:, :, i), degVec, r2Vec, smd.interpolation)';
+    % l_i is the line integral of volume fraction of ith component,
+    % l_i = \int v_i(x,y) ds
+    p3 = cell(nTissueTriplets, 1);
+    for it = 1:nTissueTriplets  % it = triplet index
+      for ic = 1:3   % ic = triplet component index
+        porig3 = sinogramJ(Vol3{it}(:, :, ic), degVec, r2Vec, smd.interpolation)';
         X = size(porig3, 2);
-        p3{j}(:, :, i) = porig3(:,1+(X-Nr2)/2:X-(X-Nr2)/2)';
-        p3{j}(:, :, i) = pixsiz * p3{j}(:, :, i);
+        p3{it}(:, :, ic) = porig3(:,1+(X-Nr2)/2:X-(X-Nr2)/2)';
+        p3{it}(:, :, ic) = pixsiz * p3{it}(:, :, ic);
       end
     end
   end
@@ -208,27 +216,33 @@ for iter = 1:numbIter
   %----------------------------------
   disp('Calculating monoenergetic projections...')
   if pmd.p2MD
-    p2Low = cell(length(p2), 1);
-    p2High = cell(length(p2), 1);
-    for j = 1:length(p2);
-      for i = 1:2
-        p2Low{j}(:, :, i)  = p2{j}(:, :, i) * Cross2{pmd.tissueOrder2(j)}(1, i) * 100;
-        p2High{j}(:, :, i) = p2{j}(:, :, i) * Cross2{pmd.tissueOrder2(j)}(2, i) * 100;
+    % p2Low and p2High are radiological paths through the ith component for
+    % E_1 and E_2, respectively
+    p2Low = cell(nTissueDoublets, 1);
+    p2High = cell(nTissueDoublets, 1);
+    for id = 1:nTissueDoublets  % id = doublet index
+      for ic = 1:2  % ic = doublet component index
+        p2Low{id}(:, :, ic)  = p2{id}(:, :, ic) * Cross2{pmd.tissueOrder2(id)}(1, ic) * 100;
+        p2High{id}(:, :, ic) = p2{id}(:, :, ic) * Cross2{pmd.tissueOrder2(id)}(2, ic) * 100;
       end
     end
   end
   
   if pmd.p3MD
-    p3Low = cell(length(p3), 1);
-    p3High = cell(length(p3), 1);
-    for j = 1:length(p3);
-      for i = 1:3
-        p3Low{j}(:, :, i)  = p3{j}(:, :, i) * pmd.Att3{pmd.tissueOrder3(j)}(1, i) * 100;
-        p3High{j}(:, :, i) = p3{j}(:, :, i) * pmd.Att3{pmd.tissueOrder3(j)}(2, i) * 100;
+    % p3Low and p3High are radiological paths through the ith component for
+    % E_1 and E_2, respectively
+    p3Low = cell(nTissueTriplets, 1);
+    p3High = cell(nTissueTriplets, 1);
+    for it = 1:nTissueTriplets  % it = triplet index
+      for ic = 1:3  % ic = triplet component index 
+        p3Low{it}(:, :, ic)  = p3{it}(:, :, ic) * pmd.Att3{pmd.tissueOrder3(it)}(1, ic) * 100;
+        p3High{it}(:, :, ic) = p3{it}(:, :, ic) * pmd.Att3{pmd.tissueOrder3(it)}(2, ic) * 100;
       end
     end
   end
   
+  % Compute the radiological paths through all components by
+  % summing contributions from individual components
   if pmd.p2MD
     MLow = sum(sum(cat(4, p2Low{:}), 4), 3);
     MHigh = sum(sum(cat(4, p2High{:}), 4), 3);
@@ -245,21 +259,24 @@ for iter = 1:numbIter
   % Compute polychromatic projections
   % ---------------------------------
   disp('Calculating polychromatic projections...')
+
+  % p is an array [Nd x Np x Ntbm], where Ntbm is the total number of base
+  % materials, i.e. the 2*Nt2 + 3*Nt3, see PhantomModelData.m
   if pmd.p2MD
-    for i = 1:length(p2);
-      if i == 1
-        p = p2{i};
+    for id = 1:nTissueDoublets  % id = doublet index
+      if id == 1
+        p = p2{id};
       else
-        p = cat(3, p, p2{i});
+        p = cat(3, p, p2{id});
       end
     end
   end
   if pmd.p3MD
-    for i = 1:length(p3);
+    for it = 1:nTissueTriplets  % it = triplet index
       if ~exist('p','var')
-        p = p3{i};
+        p = p3{it};
       else
-        p = cat(3, p, p3{i});
+        p = cat(3, p, p3{it});
       end
     end
   end
@@ -307,18 +324,18 @@ for iter = 1:numbIter
   AttE2mat = 0.01*recHigh;
   
   if pmd.p2MD
-    dens = cell(length(tissue2), 1);
-    Wei2 = cell(length(tissue2), 1);
-    for i = 1:length(tissue2)
-      [Wei2{i}, dens{i}] = MD2(AttE1mat, AttE2mat, pmd.Att2{pmd.tissueOrder2(i)},...
-        pmd.Dens2{pmd.tissueOrder2(i)}, tissue2{i});
+    dens = cell(nTissueDoublets, 1);
+    Wei2 = cell(nTissueDoublets, 1);
+    for id = 1:nTissueDoublets  % id = doublet index
+      [Wei2{id}, dens{id}] = MD2(AttE1mat, AttE2mat, pmd.Att2{pmd.tissueOrder2(id)},...
+        pmd.Dens2{pmd.tissueOrder2(id)}, tissue2{id});
     end
   end
   
   if pmd.p3MD
-    Wei3 = cell(length(tissue3), 1);
-    for i = 1:length(tissue3)
-      Wei3{i} = MD3(AttE1mat, AttE2mat, pmd.Att3{pmd.tissueOrder3(i)}, pmd.Dens3{pmd.tissueOrder3(i)}, tissue3{i}, 1);
+    Wei3 = cell(nTissueTriplets, 1);
+    for it = 1:nTissueTriplets  % it = triplet index
+      Wei3{it} = MD3(AttE1mat, AttE2mat, pmd.Att3{pmd.tissueOrder3(it)}, pmd.Dens3{pmd.tissueOrder3(it)}, tissue3{it}, 1);
     end
   end
   
