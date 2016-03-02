@@ -39,7 +39,7 @@ r2Vec  = (-(Nr2-1)/2:1:(Nr2-1)/2);
 % Initialization of circular reconstruction area mask
 % ---------------------------------------------------
 [x,y] = meshgrid(r2Vec,r2Vec);
-smd.mask = (x.^2 + y.^2) <= ((Nr2-1)/2)^2;
+smd.mask = (x.^2 + y.^2) < ((Nr2-1)/2)^2;
 
 % Compute I0 for both spectra
 % --------------------------
