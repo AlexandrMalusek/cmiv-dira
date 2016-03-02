@@ -79,6 +79,7 @@ if gDiraPlotFigures == 1
   drawnow();
 end
 
+
 %% Inital Tissue segmentation
 % 
 disp('Classifying tissues...')
@@ -110,7 +111,7 @@ if pmd.p3MD
   Wei3 = cell(nTissueTriplets, 1);
   for it = 1:nTissueTriplets  % it = triplet index
     Wei3{it} = MD3(AttE1mat, AttE2mat, pmd.Att3{pmd.tissueOrder3(it)},...
-      pmd.Dens3{pmd.tissueOrder3(it)}, tissue3{it}, 1);
+      pmd.Dens3{pmd.tissueOrder3(it)}, tissue3{it}, 0);
   end
 end
 
@@ -136,6 +137,7 @@ if gDiraPlotFigures == 1
   drawnow();
 end
 
+
 %% Iterate
 %
 iterno = numbIter;
@@ -158,22 +160,9 @@ for iter = 1:numbIter
   %   v_i(x,y) = w_i(x,y) * rho(x,y) / rho_i
   %   where rho(x,y) = 1/(w_1(x,y)/rho_1 + w_2(x,y)/rho_2 + w_3(x,y)/rho_3)
   for it = 1:nTissueTriplets  % it = triplet index
-    if it == 1
-      % Temporary workaround: Handle air outside the imaged object.
-      % lipidAirMask: air outside the body AND inside the CT-scanner specific "circle"
-      % tissue3{1}: the union of the body soft tissue AND the air outside the body
-      % In the future a different solution will be used:
-      % - air outside the body will be decomposed to air + soft tissue using 2MD
-      % - CT table has to be segmented out
-      lipidAirMask = ((AttE1mat < pmd.Att3{1}(1,1)) | (AttE2mat < pmd.Att3{1}(2,1))) .* tissue3{1};
-      Vol3{it}(:,:,1) = Wei3{it}(:,:,1) ./ ...
-        (Wei3{it}(:,:,1)/pmd.Dens3{it}(1) + Wei3{it}(:,:,2)/pmd.Dens3{it}(2) + Wei3{it}(:,:,3)/pmd.Dens3{it}(3) + eps) /...
-        pmd.Dens3{it}(1) .* (tissue3{1} - lipidAirMask) + Wei3{1}(:,:,1) .* lipidAirMask;
-    else
-      Vol3{it}(:,:,1) = Wei3{it}(:,:,1) ./ ...
-        (Wei3{it}(:,:,1)/pmd.Dens3{it}(1) + Wei3{it}(:,:,2)/pmd.Dens3{it}(2) + Wei3{it}(:,:,3)/pmd.Dens3{it}(3) + eps) /...
-        pmd.Dens3{it}(1); 
-    end
+    Vol3{it}(:,:,1) = Wei3{it}(:,:,1) ./ ...
+      (Wei3{it}(:,:,1)/pmd.Dens3{it}(1) + Wei3{it}(:,:,2)/pmd.Dens3{it}(2) + Wei3{it}(:,:,3)/pmd.Dens3{it}(3) + eps) /...
+      pmd.Dens3{it}(1); 
     Vol3{it}(:,:,2) = Wei3{it}(:,:,2) ./ ...
       (Wei3{it}(:,:,1)/pmd.Dens3{it}(1) + Wei3{it}(:,:,2)/pmd.Dens3{it}(2) + Wei3{it}(:,:,3)/pmd.Dens3{it}(3) + eps) /...
       pmd.Dens3{it}(2);
@@ -290,16 +279,26 @@ for iter = 1:numbIter
         smd.NLow, smd.NHigh, p, pmd.muLow, pmd.muHigh);
   end
   clear('p');
-  
-  ZLow  = pmd.projLow + (MLow - ApLow);
-  ZHigh = pmd.projHigh + (MHigh - ApHigh);
-  
-  % Reconstruction
-  % --------------
-  disp('Reconstruction...')
-  recLow = reconstructIteratedProjections(ZLow, r2Vec, degVec, smd.N1, smd.dt1);
-  recHigh = reconstructIteratedProjections(ZHigh, r2Vec, degVec, smd.N1, smd.dt1);
-  
+
+  % Select reconstruction algorithm
+  if pmd.recAlg == 0
+    ZLow  = pmd.projLow + (MLow - ApLow);
+    ZHigh = pmd.projHigh + (MHigh - ApHigh);
+
+    disp('Reconstruction...')
+    recLow = reconstructIteratedProjections(ZLow, r2Vec, degVec, smd.N1, smd.dt1);
+    recHigh = reconstructIteratedProjections(ZHigh, r2Vec, degVec, smd.N1, smd.dt1);
+  else
+    ZLow  = pmd.projLow - ApLow;
+    ZHigh = pmd.projHigh - ApHigh;
+
+    disp('Reconstruction...')
+    recLow = pmd.recLowSet{pmd.curIterIndex-1} .* smd.mask ...
+      + reconstructIteratedProjections(ZLow, r2Vec, degVec, smd.N1, smd.dt1);
+    recHigh = pmd.recHighSet{pmd.curIterIndex-1} .* smd.mask ...
+      + reconstructIteratedProjections(ZHigh, r2Vec, degVec, smd.N1, smd.dt1); 
+  end
+    
   pmd.recLowSet{pmd.curIterIndex} = recLow;
   pmd.recHighSet{pmd.curIterIndex} = recHigh;
   
@@ -308,6 +307,7 @@ for iter = 1:numbIter
     pmd.PlotRecLacImages(iter);
     drawnow();
   end
+
   
   % Tissue segmentation
   % -------------------
@@ -335,7 +335,7 @@ for iter = 1:numbIter
   if pmd.p3MD
     Wei3 = cell(nTissueTriplets, 1);
     for it = 1:nTissueTriplets  % it = triplet index
-      Wei3{it} = MD3(AttE1mat, AttE2mat, pmd.Att3{pmd.tissueOrder3(it)}, pmd.Dens3{pmd.tissueOrder3(it)}, tissue3{it}, 1);
+      Wei3{it} = MD3(AttE1mat, AttE2mat, pmd.Att3{pmd.tissueOrder3(it)}, pmd.Dens3{pmd.tissueOrder3(it)}, tissue3{it}, 0);
     end
   end
   
@@ -361,7 +361,7 @@ end
 
 %% Add material decomposition of prostate to resulting data.
 %
-pmd.Wei3SA{1} = MD3(AttE1mat, AttE2mat, pmd.Att3SA, pmd.Dens3SA, pmd.maskSA, 1);
+pmd.Wei3SA{1} = MD3(AttE1mat, AttE2mat, pmd.Att3SA, pmd.Dens3SA, pmd.maskSA, 0);
 % Plot computed mass fractions from MD3
 if gDiraPlotFigures == 1
   plotWei3(pmd.Wei3SA, pmd.name3SA);

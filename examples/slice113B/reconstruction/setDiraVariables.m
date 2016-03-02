@@ -42,7 +42,7 @@ pmd.eEL = 50.0;       % low effective energy in keV
 pmd.eEH = 88.5;       % high effective energy in keV
 pmd.p2MD = 1;         % using 2MD.
 pmd.p3MD = 1;         % using 3MS.
-
+pmd.recAlg = 0;       % reconstruction algorithm (0 = old DIRA, 1 = iterative DEFBP)
 
 % The setting of material data takes long time. Skip it if not needed.
 if ~pSetMaterialData
@@ -95,21 +95,39 @@ waterStr = 'H0.666667O0.333333';
 waterDens = 1.000;
 
 % Doublets for MD2
-pmd.name2{1}{1} = 'compact bone';
-pmd.Dens2{1}(1) = boneDens;
-Cross2{1}(:, 1) = [CalculateMAC(boneStr, pmd.eEL),...
-  CalculateMAC(boneStr, pmd.eEH)];
+%% first doublet
+pmd.name2{1}{1} = 'lipid';
+pmd.Dens2{1}(1) = lipidDens;
+Cross2{1}(:, 1) = [CalculateMAC(lipidStr, pmd.eEL),...
+  CalculateMAC(lipidStr, pmd.eEH)];
 pmd.Att2{1}(:, 1) = pmd.Dens2{1}(1) * Cross2{1}(:, 1);
-mu2Low{1}(:, 1) = CalculateMACs(boneStr, 1:smd.eL);
-mu2High{1}(:, 1) = CalculateMACs(boneStr, 1:smd.eH);
+mu2Low{1}(:, 1) = CalculateMACs(lipidStr, 1:smd.eL);
+mu2High{1}(:, 1) = CalculateMACs(lipidStr, 1:smd.eH);
 
-pmd.name2{1}{2} = 'bone marrow';
-pmd.Dens2{1}(2) = marrowMixDens;
-Cross2{1}(:, 2) = [CalculateMAC(marrowMixStr, pmd.eEL),...
-  CalculateMAC(marrowMixStr, pmd.eEH)];
+pmd.name2{1}{2} = 'water';
+pmd.Dens2{1}(2) = waterDens;
+Cross2{1}(:, 2) = [CalculateMAC(waterStr, pmd.eEL),...
+  CalculateMAC(waterStr, pmd.eEH)];
 pmd.Att2{1}(:, 2) = pmd.Dens2{1}(2) * Cross2{1}(:, 2);
-mu2Low{1}(:, 2) = CalculateMACs(marrowMixStr, 1:smd.eL);
-mu2High{1}(:, 2) = CalculateMACs(marrowMixStr, 1:smd.eH);
+mu2Low{1}(:, 2) = CalculateMACs(waterStr, 1:smd.eL);
+mu2High{1}(:, 2) = CalculateMACs(waterStr, 1:smd.eH);
+
+%% second doublet
+pmd.name2{2}{1} = 'compact bone';
+pmd.Dens2{2}(1) = boneDens;
+Cross2{2}(:, 1) = [CalculateMAC(boneStr, pmd.eEL),...
+  CalculateMAC(boneStr, pmd.eEH)];
+pmd.Att2{2}(:, 1) = pmd.Dens2{2}(1) * Cross2{2}(:, 1);
+mu2Low{2}(:, 1) = CalculateMACs(boneStr, 1:smd.eL);
+mu2High{2}(:, 1) = CalculateMACs(boneStr, 1:smd.eH);
+
+pmd.name2{2}{2} = 'bone marrow';
+pmd.Dens2{2}(2) = marrowMixDens;
+Cross2{2}(:, 2) = [CalculateMAC(marrowMixStr, pmd.eEL),...
+  CalculateMAC(marrowMixStr, pmd.eEH)];
+pmd.Att2{2}(:, 2) = pmd.Dens2{2}(2) * Cross2{2}(:, 2);
+mu2Low{2}(:, 2) = CalculateMACs(marrowMixStr, 1:smd.eL);
+mu2High{2}(:, 2) = CalculateMACs(marrowMixStr, 1:smd.eH);
 
 % Triplets for MD3
 pmd.name3{1}{1} = 'lipid';
@@ -158,11 +176,11 @@ pmd.mu3HighSA(:, 3) = pmd.Dens3SA(3) * CalculateMACs(caStr, 1:smd.eH);
 % Ordering of coefficients are important first tissues for 2MD in the
 % output order of tissue classification and then tissues for 3MD in output
 % order of tissue classification.
-pmd.tissueOrder2 = [1];
+pmd.tissueOrder2 = [1, 2];
 pmd.tissueOrder3 = [1];
 
-pmd.muLow = cat(2, mu2Low{1}, mu3Low{1});
-pmd.muHigh = cat(2, mu2High{1}, mu3High{1});
+pmd.muLow = cat(2, mu2Low{1}, mu2Low{2}, mu3Low{1});
+pmd.muHigh = cat(2, mu2High{1}, mu2High{2}, mu3High{1});
 
 % Load and shrink prostate mask
 se = [1 1 1; 1 1 1; 1 1 1];

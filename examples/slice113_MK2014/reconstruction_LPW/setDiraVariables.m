@@ -43,6 +43,7 @@ pmd.eEL = 50.0;       % low effective energy in keV
 pmd.eEH = 88.5;       % high effective energy in keV
 pmd.p2MD = 1;         % using 2MD.
 pmd.p3MD = 1;         % using 3MS.
+pmd.recAlg = 0;       % reconstruction algorithm (0 = old DIRA, 1 = iterative DEFBP)
 pmd.atlasImage = imread('atlasImage_slice113.png');
 pmd.referenceImage = imread('referenceImage_slice113.png');
 

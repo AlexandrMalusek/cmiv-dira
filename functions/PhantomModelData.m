@@ -13,6 +13,7 @@ classdef PhantomModelData < handle
     curIterIndex  % current iteration index (iternal state variable)
     eEL           % low effective energy in keV
     eEH           % high effective energy in keV
+    recAlg        % reconstruction algorithm
     % Projections and reconstructed images
     projLow       % [Nd x Np double] projections for Ul
     projHigh      % [Nd x Np double] projections for Uh
