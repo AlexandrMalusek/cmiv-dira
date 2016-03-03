@@ -1,56 +1,7 @@
-
 #include <math.h>
 #include <string.h>
-
-#ifdef __APPLE__
-  #include <OpenCL/opencl.h>
-#else
-  #include <CL/cl.h>
-#endif
-
+#include <CL/cl.h>
 #include "mex.h"
-
-const char *KernelSource = "\n" \
-"        __kernel void computePolyProj(__global int *ePtr, const double ue, __global double *nPtr,\n" \
-"                              __global double *pPtr, __global double *muPtr,\n" \
-"                              __global double *apPtr, const int e_Size,\n" \
-"                                const int p_Size, const int mu_Size,\n" \
-"                                const int total_size)\n" \
-"{\n" \
-"\n" \
-"    #define energies 140\n" \
-"\n" \
-"    int t_id = get_global_id(0);\n" \
-" \n" \
-"    int k;\n" \
-"    int l;\n" \
-"\n" \
-"    __private int energyLevels[energies];\n" \
-"\n" \
-"    for(k=1;k<energies;++k)\n" \
-"        energyLevels[k] = ePtr[k];\n" \
-"  \n" \
-"    double temporarySum = 0;\n" \
-"    double result = 0;\n" \
-"\n" \
-"    for(k = 1; k < e_Size-1; ++k)\n" \
-"    {\n" \
-" 	  temporarySum = 0;\n" \
-"               \n" \
-" 	  for(l = 0; l < p_Size; ++l)\n" \
-"      {\n" \
-" 	    temporarySum += (-*(muPtr + l*mu_Size + energyLevels[k] - 1))*\n" \
-"                         100*(*(pPtr + t_id + l*total_size));\n" \
-"      }\n" \
-" 	  result += (energyLevels[k] * (*(nPtr + k))) *\n" \
-"              	( energyLevels[k+1] - energyLevels[k-1]) *\n" \
-" 		         exp(temporarySum);\n" \
-"    }\n" \
-"    *(apPtr + t_id) = -log(result/2/ue);\n" \
-"}\n" \
-"\n";
-
-static char rcs_id[] = "$Revision: 1.10 $";
 
 /* Input Arguments */
 #define ELOW      (prhs[0])
@@ -64,8 +15,8 @@ static char rcs_id[] = "$Revision: 1.10 $";
 #define MUHIGH    (prhs[8])
 
 /* Output Arguments */
-#define	APLOW     (plhs[0])
-#define	APHIGH    (plhs[1])
+#define  APLOW     (plhs[0])
+#define  APHIGH    (plhs[1])
 
 /**
  * Need 9 input arguments: ELow, EHigh, uELow, ueHigh, NLow, NHigh, p, muLow, muHigh
@@ -77,11 +28,11 @@ mexFunction(int nlhs, mxArray  *plhs[], int nrhs, const mxArray  *prhs[])
   /* Input pointers */
   int *eLowPtr;     /* Energy levels */
   int *eHighPtr;     /* Energy levels */
-  double ueLow;	
+  double ueLow;  
   double ueHigh;
-  double *nLowPtr;		
+  double *nLowPtr;    
   double *nHighPtr;
-  double *pPtr;		
+  double *pPtr;    
   double *muLowPtr;
   double *muHighPtr;
   double *apLowPtr;
@@ -95,25 +46,25 @@ mexFunction(int nlhs, mxArray  *plhs[], int nrhs, const mxArray  *prhs[])
   const int *dimPtr;   
   
   /*Size variables */
-  int columns;      /* columns */
-  int rows;         /* rows */
-  int total_size;   /* Total image size, columns * rows */
-  int eLow_Size;       /* Number of energy levels */
-  int eHigh_Size;       /* Number of energy levels */
-  int p_Size;       /* number of layers */
+  int columns;        /* columns */
+  int rows;           /* rows */
+  int total_size;     /* Total image size, columns * rows */
+  int eLow_Size;      /* Number of energy levels */
+  int eHigh_Size;     /* Number of energy levels */
+  int no_projections; /* number of individual projections */
   int muLow_Size;
   int muHigh_Size;
   
-  int k;            /* Loop counter */
+  int k;              /* Loop counter */
   
   int error;
   cl_platform_id platform;
   unsigned int no_platforms;
-  cl_device_id device;			 /* compute device id */
+  cl_device_id device;
   unsigned int no_devices;
   size_t no_workgroups;
-  cl_context context;				 /* compute context */
-  cl_command_queue commandqueue;		  /* compute command queue */
+  cl_context context;
+  cl_command_queue commandqueue;
   
   static cl_program program_computePolyProj;
   static cl_kernel kernel_computePolyProj;
@@ -129,6 +80,47 @@ mexFunction(int nlhs, mxArray  *plhs[], int nrhs, const mxArray  *prhs[])
   size_t globalworksize;
   
   cl_event event;
+  
+  /* The kernel source code*/
+    /* Kernel to execute */
+  const char *source =   "\n" \
+"#define energies 140  \n" \
+"  \n" \
+"kernel void computePolyProj(__global int *ePtr, const double ue, __global double *nPtr,   \n" \
+"                              __global double *pPtr, __global double *muPtr,   \n" \
+"                              __global double *apPtr, const int e_Size,   \n" \
+"                                const int no_projections, const int mu_Size,   \n" \
+"                                const int total_size)   \n" \
+"{   \n" \
+"    int t_id = get_global_id(0);   \n" \
+"    \n" \
+"    int k;   \n" \
+"    int l;   \n" \
+"   \n" \
+"    __local int energyLevels[energies];   \n" \
+"   \n" \
+"    for(k=1;k<energies;++k)   \n" \
+"        energyLevels[k] = ePtr[k];   \n" \
+"     \n" \
+"    double temporarySum = 0;   \n" \
+"    double result = 0;   \n" \
+"   \n" \
+"    for(k = 1; k < e_Size-1; ++k)   \n" \
+"    {   \n" \
+"     temporarySum = 0;   \n" \
+"                  \n" \
+"     for(l = 0; l < no_projections; ++l)   \n" \
+"      {   \n" \
+"       temporarySum += -muPtr[l*mu_Size + energyLevels[k] - 1]*   \n" \
+"                         100*pPtr[l*total_size + t_id];   \n" \
+"      }   \n" \
+"     result += (energyLevels[k] * nPtr[k]) *   \n" \
+"                (energyLevels[k+1] - energyLevels[k-1]) *   \n" \
+"              exp(temporarySum);   \n" \
+"    }   \n" \
+"    apPtr[t_id] = -log(result/2/ue);   \n" \
+"}   \n" \
+"\n";
   
   /* Check validity of arguments */
   if (nrhs != 9)
@@ -160,10 +152,6 @@ mexFunction(int nlhs, mxArray  *plhs[], int nrhs, const mxArray  *prhs[])
   {
     mexErrMsgTxt("Input must be double.");
   }
-  
-  /**
-   * Matrix allocation
-   */
   
   /* Get the size of E matrix and allocate memory */
   columns = mxGetN(ELOW);
@@ -249,56 +237,38 @@ mexFunction(int nlhs, mxArray  *plhs[], int nrhs, const mxArray  *prhs[])
   
   /* Get the z-dimension for matrix P */
   dimPtr = mxGetDimensions(P);
-  p_Size = *(dimPtr + 2);
+  no_projections = dimPtr[2];
   
-  total_size = rows*columns/p_Size;
+  total_size = rows*columns/no_projections;
   
   /* Allocate a 2D matrix for the output AP */
-  /* Columns is 720x5 = 3600, need only 720 as column value, so divide by p_Size */
-  APLOW = mxCreateDoubleMatrix(rows, columns/p_Size, mxREAL);
+  /* Columns is 720x5 = 3600, need only 720 as column value, so divide by no_projections */
+  APLOW = mxCreateDoubleMatrix(rows, columns/no_projections, mxREAL);
   apLowPtr = mxGetPr(APLOW);
   
-  APHIGH = mxCreateDoubleMatrix(rows, columns/p_Size, mxREAL);
+  APHIGH = mxCreateDoubleMatrix(rows, columns/no_projections, mxREAL);
   apHighPtr = mxGetPr(APHIGH);
   
   error = clGetPlatformIDs(1, &platform, &no_platforms);
-    
-//   printf("Platforms: %i \n", no_platforms);
-
-  /* Where to run */
   error = clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &device, &no_devices);
-     
-//   printf("Devices: %i \n", no_devices);
-  
   error = clGetDeviceInfo(device, CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(size_t), &no_workgroups, NULL);
-//   printf("maximum number of workgroups: %d\n", (int)no_workgroups);
     
   context = clCreateContext(0, 1, &device, NULL, NULL, &error);
-
-  // create command queue
   commandqueue = clCreateCommandQueue(context, device, 0, &error);
   
-  // create the program
-  program_computePolyProj = clCreateProgramWithSource(context, 1, (const char **) & KernelSource, NULL, &error);
+  program_computePolyProj = clCreateProgramWithSource(context, 1, (const char **)&source, 
+                                                    NULL, &error);
 
   // build the program
   error = clBuildProgram(program_computePolyProj, 0, NULL, NULL, NULL, NULL);
-  if (error != CL_SUCCESS)
-  {
-    // write out the build log, then exit
-    char cBuildLog[10240];
-    clGetProgramBuildInfo(program_computePolyProj, device, CL_PROGRAM_BUILD_LOG,
-                          sizeof(cBuildLog), cBuildLog, NULL );
-    printf("\nBuild Log:\n%s\n\n", (char *)&cBuildLog);
-  }
   
   kernel_computePolyProj = clCreateKernel(program_computePolyProj, "computePolyProj", &error);
   
   /* Compute ApLow */
   E_input  = clCreateBuffer(context,  CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,  sizeof(int) * eLow_Size, eLowPtr, NULL);
   N_input  = clCreateBuffer(context,  CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,  sizeof(double) * eLow_Size, nLowPtr, NULL);
-  P_input  = clCreateBuffer(context,  CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,  sizeof(double) * total_size*p_Size, pPtr, NULL);
-  MU_input = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,  sizeof(double) * muLow_Size*p_Size, muLowPtr, NULL);
+  P_input  = clCreateBuffer(context,  CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,  sizeof(double) * total_size*no_projections, pPtr, NULL);
+  MU_input = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,  sizeof(double) * muLow_Size*no_projections, muLowPtr, NULL);
   
   AP_output = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof(double) * total_size, NULL, NULL);
   
@@ -309,11 +279,11 @@ mexFunction(int nlhs, mxArray  *plhs[], int nrhs, const mxArray  *prhs[])
   error |= clSetKernelArg(kernel_computePolyProj, 4, sizeof(cl_mem), (void *) &MU_input);
   error |= clSetKernelArg(kernel_computePolyProj, 5, sizeof(cl_mem), (void *) &AP_output);
   error |= clSetKernelArg(kernel_computePolyProj, 6, sizeof(int), &eLow_Size);
-  error |= clSetKernelArg(kernel_computePolyProj, 7, sizeof(int), &p_Size);
+  error |= clSetKernelArg(kernel_computePolyProj, 7, sizeof(int), &no_projections);
   error |= clSetKernelArg(kernel_computePolyProj, 8, sizeof(int), &muLow_Size);
   error |= clSetKernelArg(kernel_computePolyProj, 9, sizeof(int), &total_size);
   
-  localworksize = no_workgroups;
+  localworksize = 32;
   globalworksize = total_size;
 
   /* Enqueue and run */
@@ -328,8 +298,8 @@ mexFunction(int nlhs, mxArray  *plhs[], int nrhs, const mxArray  *prhs[])
   /* Compute ApHigh */
   E_input  = clCreateBuffer(context,  CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,  sizeof(int) * eHigh_Size, eHighPtr, NULL);
   N_input  = clCreateBuffer(context,  CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,  sizeof(double) * eHigh_Size, nHighPtr, NULL);
-  P_input  = clCreateBuffer(context,  CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,  sizeof(double) * total_size*p_Size, pPtr, NULL);
-  MU_input = clCreateBuffer(context,  CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,  sizeof(double) * muHigh_Size*p_Size, muHighPtr, NULL);
+  P_input  = clCreateBuffer(context,  CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,  sizeof(double) * total_size*no_projections, pPtr, NULL);
+  MU_input = clCreateBuffer(context,  CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,  sizeof(double) * muHigh_Size*no_projections, muHighPtr, NULL);
   
   AP_output = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof(double) * total_size, NULL, NULL);
   
@@ -340,7 +310,7 @@ mexFunction(int nlhs, mxArray  *plhs[], int nrhs, const mxArray  *prhs[])
   error |= clSetKernelArg(kernel_computePolyProj, 4, sizeof(cl_mem), (void *) &MU_input);
   error |= clSetKernelArg(kernel_computePolyProj, 5, sizeof(cl_mem), (void *) &AP_output);
   error |= clSetKernelArg(kernel_computePolyProj, 6, sizeof(int), &eHigh_Size);
-  error |= clSetKernelArg(kernel_computePolyProj, 7, sizeof(int), &p_Size);
+  error |= clSetKernelArg(kernel_computePolyProj, 7, sizeof(int), &no_projections);
   error |= clSetKernelArg(kernel_computePolyProj, 8, sizeof(int), &muHigh_Size);
   error |= clSetKernelArg(kernel_computePolyProj, 9, sizeof(int), &total_size);
 

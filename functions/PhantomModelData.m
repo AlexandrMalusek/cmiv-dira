@@ -13,6 +13,7 @@ classdef PhantomModelData < handle
     curIterIndex  % current iteration index (iternal state variable)
     eEL           % low effective energy in keV
     eEH           % high effective energy in keV
+    recAlg        % reconstruction algorithm
     % Projections and reconstructed images
     projLow       % [Nd x Np double] projections for Ul
     projHigh      % [Nd x Np double] projections for Uh
@@ -25,30 +26,20 @@ classdef PhantomModelData < handle
     name2         % {Nt2 x 1 cell}
     Dens2         % {Nt2 x 1 cell}[1 x 2 double] tabulated mass density
     Att2          % {Nt2 x 1 cell}[2 x 2 double] tabulated LACs
-    tissueOrder2  %
     tissue2Set    % {Ni x 1 cell}{Nt2 x 1 cell}[Nr x Nr double] tissue masks for MD2
     densSet       % {Ni x 1 cell}
-    Wei2Set       % {Ni x 1 cell}[Nr x Nr x 2 double] calculated mass fractions
+    Wei2Set       % {Ni x 1 cell}{Nt2 x 1 cell}[Nr x Nr x 2 double] calculated mass fractions
     % Three-material decomposition (MD3) data
     p3MD          % boolean, perform MD3?
     name3         % {Nt3 x 1 cell}
     Dens3         % {Nt3 x 1 cell}[1 x 3 double] tabulated mass density
     Att3          % {Nt3 x 1 cell}[2 x 3 double] tabulated LACs
-    tissueOrder3  %
-    tissue3Set    % {Ni x 1 cell{Nt3 x 1 cell}[Nr x Nr double] tissue masks for MD3
-    Wei3Set       % {Ni x 1 cell}[Nr x Nr x 3 double] calculated mass fractions
+    tissue3Set    % {Ni x 1 cell}{Nt3 x 1 cell}[Nr x Nr double] tissue masks for MD3
+    Wei3Set       % {Ni x 1 cell}{Nt3 x 1 cell}[Nr x Nr x 3 double] calculated mass fractions
     % Linear attenuation coefficients for MD2 and MD3
     muLow         % [Ncl x (Nt2+Nt3) double] LACs of doublets and triplets at spectrum energies
     muHigh        % [Nch x (Nt2+Nt3) double] LACs of doublets and triplets at spectrum energies
-    % Post processing three-material decomposition data
-    name3SA
-    Dens3SA
-    Att3SA
-    mu3LowSA
-    mu3HighSA
-    maskSA
-    Wei3SA
-    WeiAv
+    isPlotting    % Boolean. If set to false, some functions will not plot figures.
   end
 
   methods
@@ -138,8 +129,9 @@ classdef PhantomModelData < handle
       end
     end
 
-    function [meanReg, stdReg] = meanAndStdInRegions(pmd, centerX, centerY, radius, color, iter)
-      % meanAndStdInRegions
+    function [meanReg, stdReg, corReg] = meanStdCorForLacInRois(pmd, centerX, centerY, radius, color, iter)
+      % Mean, standard deviation and correlation coefficient for LAC in
+      % selected regions of interest.
 
       iterIndex = pmd.GetIterIndex(iter);
 
@@ -151,16 +143,22 @@ classdef PhantomModelData < handle
         [ix,iy] = meshgrid(1:N0, 1:N0);
         R2 = (ix - centerX(i)).^2 + (iy - centerY(i)).^2;
 	% Evaluate regions reconstructed at Ul
-        v = pmd.recLowSet{iter+1}(R2 < r2(i));
-        meanReg(i, 1) = mean(v);
-        stdReg(i, 1) = std(v);
+	v1 = pmd.recLowSet{iterIndex}(R2 < r2(i));
+        meanReg(i, 1) = mean(v1);
+        stdReg(i, 1) = std(v1);
         % Evaluate regions reconstructed at Uh
-        v = pmd.recHighSet{iter+1}(R2 < r2(i));
-        meanReg(i, 2) = mean(v);
-        stdReg(i, 2) = std(v);
+        v2 = pmd.recHighSet{iterIndex}(R2 < r2(i));
+        meanReg(i, 2) = mean(v2);
+        stdReg(i, 2) = std(v2);
+	% Correlation coefficient between Ul and Uh
+	cc = corrcoef(v1, v2);
+	corReg(i) = cc(1,2);
       end
 
       % Plot reconstructed images and regions
+      if pmd.isPlotting == false
+        return;
+      end
       figure();
 
       % Image for Ul
@@ -185,6 +183,30 @@ classdef PhantomModelData < handle
         plot(radius(i)*sin(t)+centerX(i), radius(i)*cos(t)+centerY(i), color{i});
       end
       hold off;
+    end
+    
+    function [meanReg, stdReg, covReg] = meanStdCovForMaFrMd3InRois(pmd, centerX,...
+      centerY, radius, color, iter, triplet)
+      % Mean, standard deviatiation and covariance matrix for MD3 mass
+      % fractions in selected regions.
+	     
+      iterIndex = pmd.GetIterIndex(iter);
+      
+      N0 = size(pmd.recLowSet{iterIndex}, 1);  % image size of pixels
+      r2 = radius.^2;                          % radius squared
+      
+      % Process each region separately
+      for i = 1:length(radius)
+        [ix,iy] = meshgrid(1:N0, 1:N0);
+        R2 = (ix - centerX(i)).^2 + (iy - centerY(i)).^2;
+	for j = 1:3
+	  w = pmd.Wei3Set{iter+1}{triplet}(:,:,j);
+	  wa(:,j) = w(R2 < r2(i));
+          meanReg(i, j) = mean(wa(:,j));
+          stdReg(i, j) = std(wa(:,j));
+	end
+	covReg(:,:,i) = cov(wa);
+      end
     end
 
     function cn = GetCondNumMdL3(pmd)

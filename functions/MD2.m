@@ -13,14 +13,14 @@ function [Wei2, dens] = MD2(AttE1mat, AttE2mat, Att2, Dens2, mask)
   % dens:     matrix of mass densities
   %
 
-  % 0 = Matlab, 1 = C, 2 = OpenMP
+  % 0 = Matlab, 1 = C, 2 = OpenMP, 3 = OpenCL
   global useCode
   switch (useCode)
-    case {1, 2}
+    case {1, 2, 3}
       [Wei2, dens] = MD2c(AttE1mat, AttE2mat, Att2, Dens2, mask);
       return;
   end
-
+  
   imgSize = size(mask);
   Wei2 = zeros(imgSize(1), imgSize(2), 3);
   dens = zeros(imgSize(1), imgSize(2));

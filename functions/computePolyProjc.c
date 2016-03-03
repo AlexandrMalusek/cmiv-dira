@@ -1,12 +1,17 @@
+/**
+ * Computes polychromatic projections by summing the values of the 
+ * projections of individual base materials over all photon energies used.
+ * 
+ * 
+ */
+
 #include "mex.h"
 #include <math.h>
 
 static void 
 computePolychromaticProjection(int *ePtr, double ue, double *nPtr, double *pPtr,
-                               double *muPtr, double *apPtr, int e_Size, int p_Size,
+                               double *muPtr, double *apPtr, int e_Size, int no_projections,
                                 int mu_Size, int N, int M);
-
-static char rcs_id[] = "$Revision: 1.10 $";
 
 /* Input Arguments */
 #define E     (prhs[0])
@@ -25,10 +30,10 @@ static char rcs_id[] = "$Revision: 1.10 $";
 void 
 mexFunction(int nlhs, mxArray  *plhs[], int nrhs, const mxArray  *prhs[])
 {
-  /* Input pointers */
-  int *ePtr;        /* Energies */
+  /* Input data */
+  int *ePtr;                 /* Energies */
   double ue;  
-  double *nPtr;      /* relative number of photons for Ul */
+  double *nPtr;              /* relative number of photons for Ul */
   double *pPtr;    
   double *muPtr;    
   
@@ -42,37 +47,35 @@ mexFunction(int nlhs, mxArray  *plhs[], int nrhs, const mxArray  *prhs[])
   /*Size variables */
   int N;
   int M;
-  int total_size;   /* Total image size, N * M */
-  int e_Size;       /* Number of energies */
-  int p_Size;       /* number of materials */
+  int total_size;           /* Total image size, N * M */
+  int e_Size;               /* Number of energies */
+  int no_projections;       /* number of materials */
   int mu_Size;
   
-  int k;            /* Loop counter */
+  int k;                    /* Loop counter */
 
   /* Check validity of arguments */
   if (nrhs != 5)
   {
-    mexErrMsgTxt("Incorrect number of INPUT arguments.");
+      mexErrMsgTxt("Incorrect number of INPUT arguments.");
   }
   
   if (nlhs != 1)
   {
-    mexErrMsgTxt("Incorrect number of OUTPUT arguments.");
+      mexErrMsgTxt("Incorrect number of OUTPUT arguments.");
   }
   
   if (mxIsSparse(E) || mxIsSparse(UE) || mxIsSparse(N_P) || mxIsSparse(P) || mxIsSparse(MU))
   {
-    mexErrMsgTxt("Sparse inputs not supported.");
+      mexErrMsgTxt("Sparse inputs not supported.");
   }
   
   if (!mxIsDouble(E) || !mxIsDouble(UE) || !mxIsDouble(N_P) || !mxIsDouble(P) || !mxIsDouble(MU))
   {
-    mexErrMsgTxt("Input must be double.");
+      mexErrMsgTxt("Input must be double.");
   }
   
-  /**
-   * Matrix allocation
-   */
+  /* Matrix allocation */
   
   /* Get the size of E matrix and allocate memory */
   N = mxGetN(E);
@@ -124,60 +127,64 @@ mexFunction(int nlhs, mxArray  *plhs[], int nrhs, const mxArray  *prhs[])
   
   /* Get the z-dimension for matrix P */
   dimPtr = mxGetDimensions(P);
-  p_Size = dimPtr[2];
+  no_projections = dimPtr[2];
   
   /* Allocate a 2D matrix for the output AP */
-  /* Columns is 720x5 = 3600, need only 720 as column value, so divide by p_Size */
-  AP = mxCreateDoubleMatrix(M, N/p_Size, mxREAL);
+  /* Columns is 720x5 = 3600, need only 720 as column value, so divide by no_projections */
+  AP = mxCreateDoubleMatrix(M, N/no_projections, mxREAL);
   
   computePolychromaticProjection(ePtr, ue, nPtr, pPtr, muPtr, mxGetPr(AP),
-                                 e_Size, p_Size, mu_Size, N/p_Size, M);
+                                 e_Size, no_projections, mu_Size, N/no_projections, M);
 }
 
 static void 
 computePolychromaticProjection(int *ePtr, double ue, double *nPtr, double *pPtr,
-                               double *muPtr, double *apPtr, int e_Size, int p_Size,
+                               double *muPtr, double *apPtr, int e_Size, int no_projections,
                                int mu_Size, int N, int M)
 {    
-  /* Loop variables */
-  int x,y;
-  int k;
-  int l;
-  
-  int energy;
-  int image_size;
-  
-  double temporarySum;
-  double result;
-  
-  image_size = M*N;
-  
-  for(y=0;y<M;++y)
-  {
-    for(x=0;x<N;x++)
+    /* Loop variables */
+    int x,y;
+    int k;
+    int l;
+    
+    int energy;
+    int image_size;
+    
+    double temporarySum;
+    double result;
+    
+    int value;
+    int smallest_x, smallest_y, largest_x, largest_y;
+    
+    image_size = M*N;
+    
+    /* Calculate for each pixel in the matrix */
+    for(y=0;y<M;++y)
     {
-      result = 0;
-
-      for(k=1;k<e_Size-1;++k)
-      {
-        /* tmpSum = zeros(size(p(:, :, 1))); % 511x720 */
-        temporarySum = 0;
-        
-        energy = ePtr[k];
-        
-        /* tmpSum = tmpSum+(-mu(E(k), i)*100.*p(:, :, i)); */
-        for(l=0;l<p_Size;++l)
+        for(x=0;x<N;x++)
         {
-          temporarySum += -muPtr[l*mu_Size + energy - 1]*100*
-                           pPtr[y*N + x + l*image_size] ;
-        }
-        
-        /* sl(:, :, k) = (E(k)*N(k))*(E(k+1)-E(k-1)).*exp(tmpSum);  */
-        result += (energy * nPtr[k])*(ePtr[k + 1] - ePtr[k - 1])*
-               exp(temporarySum);
-      }
-      /* Ap = -log(up/uE);  */
-      apPtr[y*N + x] = -log((result/2)/ue);
-    }  
-  }    
+            result = 0;
+
+            for(k=1;k<e_Size-1;++k)
+            {
+                /* tmpSum = zeros(size(p(:, :, 1))); % 511x720 */
+                temporarySum = 0;
+                
+                energy = ePtr[k];
+                
+                /* tmpSum = tmpSum+(-mu(E(k), i)*100.*p(:, :, i)); */
+                for(l=0;l<no_projections;++l)
+                {
+                    temporarySum += -muPtr[l*mu_Size + energy - 1]*100*
+                                     pPtr[y*N + x + l*image_size] ;
+                }
+                
+                /* sl(:, :, k) = (E(k)*N(k))*(E(k+1)-E(k-1)).*exp(tmpSum);    */
+                result += (energy * nPtr[k])*(ePtr[k + 1] - ePtr[k - 1])*
+                           exp(temporarySum);
+            }
+            /* Ap = -log(up/uE);  */
+            apPtr[y*N + x] = -log((result/2)/ue);
+        }  
+    }    
 }   
