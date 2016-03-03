@@ -82,14 +82,6 @@ lipidDens = 0.920;
 proteineStr = 'H0.480981C0.326573N0.089152O0.101004S0.002291';
 proteineDens = 1.350;
 
-% Prostate
-prostStr = 'H0.629495C0.117335N0.012196O0.239088Na0.000265P0.000394S0.000571Cl0.000344K0.000312';
-prostDens = 1.030;
-
-% Calcium
-caStr = 'Ca1.000000';
-caDens = 1.550;
-
 % Water
 waterStr = 'H0.666667O0.333333';
 waterDens = 1.000;
@@ -151,34 +143,5 @@ pmd.Att3{1}(:, 3) = [pmd.Dens3{1}(3) * CalculateMAC(waterStr, pmd.eEL),...
 mu3Low{1}(:, 3) = pmd.Dens3{1}(3) * CalculateMACs(waterStr, 1:smd.eL);
 mu3High{1}(:, 3) = pmd.Dens3{1}(3) * CalculateMACs(waterStr, 1:smd.eH);
 
-% post-processing triplet
-pmd.name3SA{1} = 'prostate';
-pmd.Dens3SA(1) = prostDens;
-pmd.Att3SA(:, 1) = [pmd.Dens3SA(1) * CalculateMAC(prostStr, pmd.eEL),...
-  pmd.Dens3SA(1) * CalculateMAC(prostStr, pmd.eEH)];
-pmd.mu3LowSA(:, 1) = pmd.Dens3SA(1) * CalculateMACs(prostStr, 1:smd.eL);
-pmd.mu3HighSA(:, 1) = pmd.Dens3SA(1) * CalculateMACs(prostStr, 1:smd.eH);
-
-pmd.name3SA{2} = 'water';
-pmd.Dens3SA(2) = waterDens;
-pmd.Att3SA(:, 2) = [pmd.Dens3SA(2) * CalculateMAC(waterStr, pmd.eEL),...
-  pmd.Dens3SA(2) * CalculateMAC(waterStr, pmd.eEH)];
-pmd.mu3LowSA(:, 2) = pmd.Dens3SA(2) * CalculateMACs(waterStr, 1:smd.eL);
-pmd.mu3HighSA(:, 2) = pmd.Dens3SA(2) * CalculateMACs(waterStr, 1:smd.eH);
-
-pmd.name3SA{3} = 'calcium';
-pmd.Dens3SA(3) = caDens;
-pmd.Att3SA(:, 3) = [pmd.Dens3SA(3) * CalculateMAC(caStr, pmd.eEL),...
-  pmd.Dens3SA(3) * CalculateMAC(caStr, pmd.eEH)];
-pmd.mu3LowSA(:, 3) = pmd.Dens3SA(3) * CalculateMACs(caStr, 1:smd.eL);
-pmd.mu3HighSA(:, 3) = pmd.Dens3SA(3) * CalculateMACs(caStr, 1:smd.eH);
-
 pmd.muLow = cat(2, mu2Low{1}, mu2Low{2}, mu3Low{1});
 pmd.muHigh = cat(2, mu2High{1}, mu2High{2}, mu3High{1});
-
-% Load and shrink prostate mask
-se = [1 1 1; 1 1 1; 1 1 1];
-load prostateMask.mat;
-ProstateMask = imerode(ProstateMask, se);
-ProstateMask = imerode(ProstateMask, se);
-pmd.maskSA = ProstateMask;

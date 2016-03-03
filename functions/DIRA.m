@@ -359,17 +359,6 @@ for iter = 1:numbIter
   end
 end
 
-%% Add material decomposition of prostate to resulting data.
-%
-pmd.Wei3SA{1} = MD3(AttE1mat, AttE2mat, pmd.Att3SA, pmd.Dens3SA, pmd.maskSA, 0);
-% Plot computed mass fractions from MD3
-if gDiraPlotFigures == 1
-  plotWei3(pmd.Wei3SA, pmd.name3SA);
-  drawnow();
-end
-pmd.WeiAv = MD3SP(mean(AttE1mat(pmd.maskSA)), mean(AttE2mat(pmd.maskSA)), pmd.Att3SA, pmd.Dens3SA);
-fprintf('Average mass fraction m1 = %f, m2 = %f and m3 = %f\n', pmd.WeiAv);
-
 pmd.curIterIndex = -1; % This state variable indicates the end of DIRA.
 
 %% Save results

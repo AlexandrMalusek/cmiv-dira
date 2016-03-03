@@ -39,15 +39,6 @@ classdef PhantomModelData < handle
     % Linear attenuation coefficients for MD2 and MD3
     muLow         % [Ncl x (Nt2+Nt3) double] LACs of doublets and triplets at spectrum energies
     muHigh        % [Nch x (Nt2+Nt3) double] LACs of doublets and triplets at spectrum energies
-    % Post processing three-material decomposition data
-    name3SA
-    Dens3SA
-    Att3SA
-    mu3LowSA
-    mu3HighSA
-    maskSA
-    Wei3SA
-    WeiAv
     isPlotting    % Boolean. If set to false, some functions will not plot figures.
   end
 
