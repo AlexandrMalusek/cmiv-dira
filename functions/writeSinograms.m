@@ -106,7 +106,7 @@ for i = 1:2
   end
   
   fId = fopen(sprintf('spektren/spk1_0.%d.spc', i-1), 'r');
-  spectCellTmp = textscan(fId, '%f %f', [2 inf]);
+  spectCellTmp = textscan(fId, '%f %f');
   if strcmp(spect, 'Low');
     currSpectLow(:, 1) = spectCellTmp{1};
     currSpectLow(:, 2) = spectCellTmp{2};
