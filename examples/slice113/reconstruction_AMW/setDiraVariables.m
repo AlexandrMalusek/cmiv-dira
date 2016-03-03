@@ -156,12 +156,6 @@ pmd.Att3SA(:, 3) = [pmd.Dens3SA(3) * CalculateMAC(caStr, pmd.eEL),...
 pmd.mu3LowSA(:, 3) = pmd.Dens3SA(3) * CalculateMACs(caStr, 1:smd.eL);
 pmd.mu3HighSA(:, 3) = pmd.Dens3SA(3) * CalculateMACs(caStr, 1:smd.eH);
 
-% Ordering of coefficients are important first tissues for 2MD in the
-% output order of tissue classification and then tissues for 3MD in output
-% order of tissue classification.
-pmd.tissueOrder2 = [1];
-pmd.tissueOrder3 = [1];
-
 pmd.muLow = cat(2, mu2Low{1}, mu3Low{1});
 pmd.muHigh = cat(2, mu2High{1}, mu3High{1});
 

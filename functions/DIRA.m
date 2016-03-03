@@ -102,16 +102,16 @@ if pmd.p2MD
   dens = cell(nTissueDoublets, 1);
   Wei2 = cell(nTissueDoublets, 1);
   for id = 1:nTissueDoublets  % id = doublet index
-    [Wei2{id}, dens{id}] = MD2(AttE1mat, AttE2mat, pmd.Att2{pmd.tissueOrder2(id)},...
-      pmd.Dens2{pmd.tissueOrder2(id)}, tissue2{id});
+    [Wei2{id}, dens{id}] = MD2(AttE1mat, AttE2mat, pmd.Att2{id},...
+      pmd.Dens2{id}, tissue2{id});
   end
 end
 
 if pmd.p3MD
   Wei3 = cell(nTissueTriplets, 1);
   for it = 1:nTissueTriplets  % it = triplet index
-    Wei3{it} = MD3(AttE1mat, AttE2mat, pmd.Att3{pmd.tissueOrder3(it)},...
-      pmd.Dens3{pmd.tissueOrder3(it)}, tissue3{it}, 0);
+    Wei3{it} = MD3(AttE1mat, AttE2mat, pmd.Att3{it},...
+      pmd.Dens3{it}, tissue3{it}, 0);
   end
 end
 
@@ -179,7 +179,7 @@ for iter = 1:numbIter
     p2 = cell(nTissueDoublets, 1);
     for id = 1:nTissueDoublets  % id = doublet index
       for ic = 1:2  % ic = doublet component index
-        porig2 = sinogramJ(Wei2{id}(:, :, ic).*dens{pmd.tissueOrder2(id)}, degVec, r2Vec, smd.interpolation)';
+        porig2 = sinogramJ(Wei2{id}(:, :, ic).*dens{id}, degVec, r2Vec, smd.interpolation)';
         X = size(porig2, 2);
         p2{id}(:, :, ic) = porig2(:,1+(X-Nr2)/2:X-(X-Nr2)/2)';
         p2{id}(:, :, ic) = pixsiz * p2{id}(:, :, ic);
@@ -211,8 +211,8 @@ for iter = 1:numbIter
     p2High = cell(nTissueDoublets, 1);
     for id = 1:nTissueDoublets  % id = doublet index
       for ic = 1:2  % ic = doublet component index
-        p2Low{id}(:, :, ic)  = p2{id}(:, :, ic) * Cross2{pmd.tissueOrder2(id)}(1, ic) * 100;
-        p2High{id}(:, :, ic) = p2{id}(:, :, ic) * Cross2{pmd.tissueOrder2(id)}(2, ic) * 100;
+        p2Low{id}(:, :, ic)  = p2{id}(:, :, ic) * Cross2{id}(1, ic) * 100;
+        p2High{id}(:, :, ic) = p2{id}(:, :, ic) * Cross2{id}(2, ic) * 100;
       end
     end
   end
@@ -224,8 +224,8 @@ for iter = 1:numbIter
     p3High = cell(nTissueTriplets, 1);
     for it = 1:nTissueTriplets  % it = triplet index
       for ic = 1:3  % ic = triplet component index 
-        p3Low{it}(:, :, ic)  = p3{it}(:, :, ic) * pmd.Att3{pmd.tissueOrder3(it)}(1, ic) * 100;
-        p3High{it}(:, :, ic) = p3{it}(:, :, ic) * pmd.Att3{pmd.tissueOrder3(it)}(2, ic) * 100;
+        p3Low{it}(:, :, ic)  = p3{it}(:, :, ic) * pmd.Att3{it}(1, ic) * 100;
+        p3High{it}(:, :, ic) = p3{it}(:, :, ic) * pmd.Att3{it}(2, ic) * 100;
       end
     end
   end
@@ -327,15 +327,15 @@ for iter = 1:numbIter
     dens = cell(nTissueDoublets, 1);
     Wei2 = cell(nTissueDoublets, 1);
     for id = 1:nTissueDoublets  % id = doublet index
-      [Wei2{id}, dens{id}] = MD2(AttE1mat, AttE2mat, pmd.Att2{pmd.tissueOrder2(id)},...
-        pmd.Dens2{pmd.tissueOrder2(id)}, tissue2{id});
+      [Wei2{id}, dens{id}] = MD2(AttE1mat, AttE2mat, pmd.Att2{id},...
+        pmd.Dens2{id}, tissue2{id});
     end
   end
   
   if pmd.p3MD
     Wei3 = cell(nTissueTriplets, 1);
     for it = 1:nTissueTriplets  % it = triplet index
-      Wei3{it} = MD3(AttE1mat, AttE2mat, pmd.Att3{pmd.tissueOrder3(it)}, pmd.Dens3{pmd.tissueOrder3(it)}, tissue3{it}, 0);
+      Wei3{it} = MD3(AttE1mat, AttE2mat, pmd.Att3{it}, pmd.Dens3{it}, tissue3{it}, 0);
     end
   end
   

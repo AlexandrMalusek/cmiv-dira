@@ -26,7 +26,6 @@ classdef PhantomModelData < handle
     name2         % {Nt2 x 1 cell}
     Dens2         % {Nt2 x 1 cell}[1 x 2 double] tabulated mass density
     Att2          % {Nt2 x 1 cell}[2 x 2 double] tabulated LACs
-    tissueOrder2  %
     tissue2Set    % {Ni x 1 cell}{Nt2 x 1 cell}[Nr x Nr double] tissue masks for MD2
     densSet       % {Ni x 1 cell}
     Wei2Set       % {Ni x 1 cell}{Nt2 x 1 cell}[Nr x Nr x 2 double] calculated mass fractions
@@ -35,7 +34,6 @@ classdef PhantomModelData < handle
     name3         % {Nt3 x 1 cell}
     Dens3         % {Nt3 x 1 cell}[1 x 3 double] tabulated mass density
     Att3          % {Nt3 x 1 cell}[2 x 3 double] tabulated LACs
-    tissueOrder3  %
     tissue3Set    % {Ni x 1 cell}{Nt3 x 1 cell}[Nr x Nr double] tissue masks for MD3
     Wei3Set       % {Ni x 1 cell}{Nt3 x 1 cell}[Nr x Nr x 3 double] calculated mass fractions
     % Linear attenuation coefficients for MD2 and MD3
