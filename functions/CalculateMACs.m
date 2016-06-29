@@ -15,9 +15,7 @@ function [uMass] = CalculateMACs(moleculeStr, eE)
   end
   
   if isempty(macs)
-    fId2 = fopen('data_macTable.txt', 'r');
-    macs = fscanf(fId2, '%f', [101 399])';
-    fclose(fId2);
+    macs =  dlmread('data_macTable.txt');
   end
   % String formating
     
