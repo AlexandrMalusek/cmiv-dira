@@ -54,7 +54,7 @@ for k=2:length(smd.EHigh)-1;
 end
 uHigh = sum(sp)/2;
 
-% Filter original projections 
+% Filter original projections, WA filter
 pmd.projLow = rampWindowForMeasuredProjections(pmd.projLow, r2Vec);
 pmd.projHigh = rampWindowForMeasuredProjections(pmd.projHigh, r2Vec);
 
@@ -109,9 +109,11 @@ end
 
 if pmd.p3MD
   Wei3 = cell(nTissueTriplets, 1);
+  dens3 = cell(nTissueTriplets, 1);
   for it = 1:nTissueTriplets  % it = triplet index
     Wei3{it} = MD3(AttE1mat, AttE2mat, pmd.Att3{it},...
       pmd.Dens3{it}, tissue3{it}, 0);
+    dens3{it} = computeDensityMd3(Wei3{it}, pmd.Dens3{it});
   end
 end
 
@@ -124,6 +126,7 @@ if pmd.p2MD
 end
 if pmd.p3MD
   pmd.Wei3Set{pmd.curIterIndex} = Wei3;
+  pmd.dens3Set{pmd.curIterIndex} = dens3;
 end
 
 % Plot computed mass fractions from MD2 and MD3
@@ -160,15 +163,9 @@ for iter = 1:numbIter
   %   v_i(x,y) = w_i(x,y) * rho(x,y) / rho_i
   %   where rho(x,y) = 1/(w_1(x,y)/rho_1 + w_2(x,y)/rho_2 + w_3(x,y)/rho_3)
   for it = 1:nTissueTriplets  % it = triplet index
-    Vol3{it}(:,:,1) = Wei3{it}(:,:,1) ./ ...
-      (Wei3{it}(:,:,1)/pmd.Dens3{it}(1) + Wei3{it}(:,:,2)/pmd.Dens3{it}(2) + Wei3{it}(:,:,3)/pmd.Dens3{it}(3) + eps) /...
-      pmd.Dens3{it}(1); 
-    Vol3{it}(:,:,2) = Wei3{it}(:,:,2) ./ ...
-      (Wei3{it}(:,:,1)/pmd.Dens3{it}(1) + Wei3{it}(:,:,2)/pmd.Dens3{it}(2) + Wei3{it}(:,:,3)/pmd.Dens3{it}(3) + eps) /...
-      pmd.Dens3{it}(2);
-    Vol3{it}(:,:,3) = Wei3{it}(:,:,3) ./ ...
-      (Wei3{it}(:,:,1)/pmd.Dens3{it}(1) + Wei3{it}(:,:,2)/pmd.Dens3{it}(2) + Wei3{it}(:,:,3)/pmd.Dens3{it}(3) + eps) /...
-      pmd.Dens3{it}(3);
+    for i = 1:3
+      Vol3{it}(:,:,i) = Wei3{it}(:,:,i) .* dens3{it} / pmd.Dens3{it}(i);
+    end
   end
 
   disp('Calculating line integrals...')
@@ -334,8 +331,10 @@ for iter = 1:numbIter
   
   if pmd.p3MD
     Wei3 = cell(nTissueTriplets, 1);
+    dens3 = cell(nTissueTriplets, 1);
     for it = 1:nTissueTriplets  % it = triplet index
       Wei3{it} = MD3(AttE1mat, AttE2mat, pmd.Att3{it}, pmd.Dens3{it}, tissue3{it}, 0);
+      dens3{it} = computeDensityMd3(Wei3{it}, pmd.Dens3{it});
     end
   end
   
@@ -345,6 +344,7 @@ for iter = 1:numbIter
   end
   if pmd.p3MD
     pmd.Wei3Set{pmd.curIterIndex} = Wei3;
+    pmd.dens3Set{pmd.curIterIndex} = dens3;
   end
 
   % Plot computed mass fractions from MD2 and MD3
