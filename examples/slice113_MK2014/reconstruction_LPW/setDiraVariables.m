@@ -81,52 +81,19 @@ marrowMixDens = 1.005;
 lipidStr = 'H0.621918C0.341890O0.036192';
 lipidDens = 0.920;
 
-% Proteine
-proteineStr = 'H0.480981C0.326573N0.089152O0.101004S0.002291';
-proteineDens = 1.350;
+% Protein
+proteinStr = 'H0.480981C0.326573N0.089152O0.101004S0.002291';
+proteinDens = 1.350;
 
 % Water
 waterStr = 'H0.666667O0.333333';
 waterDens = 1.000;
 
-% Doublets for MD2
-pmd.name2{1}{1} = 'compact bone';
-pmd.Dens2{1}(1) = boneDens;
-Cross2{1}(:, 1) = [CalculateMAC(boneStr, pmd.eEL),...
-  CalculateMAC(boneStr, pmd.eEH)];
-pmd.Att2{1}(:, 1) = pmd.Dens2{1}(1) * Cross2{1}(:, 1);
-mu2Low{1}(:, 1) = CalculateMACs(boneStr, 1:smd.eL);
-mu2High{1}(:, 1) = CalculateMACs(boneStr, 1:smd.eH);
+% Material doublets
+pmd.matDoublet{1,1} = Material('compact bone', boneDens, boneStr);
+pmd.matDoublet{1,2} = Material('bone marrow', marrowMixDens, marrowMixStr);
 
-pmd.name2{1}{2} = 'bone marrow';
-pmd.Dens2{1}(2) = marrowMixDens;
-Cross2{1}(:, 2) = [CalculateMAC(marrowMixStr, pmd.eEL),...
-  CalculateMAC(marrowMixStr, pmd.eEH)];
-pmd.Att2{1}(:, 2) = pmd.Dens2{1}(2) * Cross2{1}(:, 2);
-mu2Low{1}(:, 2) = CalculateMACs(marrowMixStr, 1:smd.eL);
-mu2High{1}(:, 2) = CalculateMACs(marrowMixStr, 1:smd.eH);
-
-% Triplets for MD3
-pmd.name3{1}{1} = 'lipid';
-pmd.Dens3{1}(1) = lipidDens;
-pmd.Att3{1}(:, 1) = [pmd.Dens3{1}(1) * CalculateMAC(lipidStr, pmd.eEL),...
-  pmd.Dens3{1}(1) * CalculateMAC(lipidStr, pmd.eEH)];
-mu3Low{1}(:, 1) = pmd.Dens3{1}(1) * CalculateMACs(lipidStr, 1:smd.eL);
-mu3High{1}(:, 1) = pmd.Dens3{1}(1) * CalculateMACs(lipidStr, 1:smd.eH);
-
-pmd.name3{1}{2} = 'proteine';
-pmd.Dens3{1}(2) = proteineDens;
-pmd.Att3{1}(:, 2) = [pmd.Dens3{1}(2) * CalculateMAC(proteineStr, pmd.eEL),...
-  pmd.Dens3{1}(2) * CalculateMAC(proteineStr, pmd.eEH)];
-mu3Low{1}(:, 2) = pmd.Dens3{1}(2) * CalculateMACs(proteineStr, 1:smd.eL);
-mu3High{1}(:, 2) = pmd.Dens3{1}(2) * CalculateMACs(proteineStr, 1:smd.eH);
-
-pmd.name3{1}{3} = 'water';
-pmd.Dens3{1}(3) = waterDens;
-pmd.Att3{1}(:, 3) = [pmd.Dens3{1}(3) * CalculateMAC(waterStr, pmd.eEL),...
-  pmd.Dens3{1}(3) * CalculateMAC(waterStr, pmd.eEH)];
-mu3Low{1}(:, 3) = pmd.Dens3{1}(3) * CalculateMACs(waterStr, 1:smd.eL);
-mu3High{1}(:, 3) = pmd.Dens3{1}(3) * CalculateMACs(waterStr, 1:smd.eH);
-
-pmd.muLow = cat(2, mu2Low{1}, mu3Low{1});
-pmd.muHigh = cat(2, mu2High{1}, mu3High{1});
+% Material triplets
+pmd.matTriplet{1,1} = Material('lipid', lipidDens, lipidStr);
+pmd.matTriplet{1,2} = Material('protein', proteinDens, proteinStr);
+pmd.matTriplet{1,3} = Material('water', waterDens, waterStr);

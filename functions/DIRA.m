@@ -19,6 +19,43 @@ if (0 == exist('gDiraPlotFigures'))
   gDiraPlotFigures = 1;
 end
 
+% Initialize internal variables used for backward compatibility.
+sizeC = size(pmd.matDoublet);
+pmd.nMaterialDoublets = sizeC(1);
+fprintf('\nNumber of material doublets = %d\n', pmd.nMaterialDoublets);
+sizeC = size(pmd.matTriplet);
+pmd.nMaterialTriplets = sizeC(1);
+fprintf('Number of material triplets = %d\n', pmd.nMaterialTriplets);
+
+for id = 1:pmd.nMaterialDoublets
+  for ic = 1:2
+    pmd.name2{id}{ic} = pmd.matDoublet{id,ic}.nameStr;
+    pmd.Dens2{id}(ic) = pmd.matDoublet{id,ic}.density;
+    Cross2{id}(:, ic) = [...
+      CalculateMAC(pmd.matDoublet{id,ic}.moleculeStr, pmd.eEL),...
+      CalculateMAC(pmd.matDoublet{id,ic}.moleculeStr, pmd.eEH)];
+    pmd.Att2{id}(:, ic) = pmd.Dens2{id}(ic) * Cross2{id}(:, ic);
+    mu2Low{id}(:, ic)  = pmd.Dens2{id}(ic) * CalculateMACs(pmd.matDoublet{id,ic}.moleculeStr, 1:smd.eL);
+    mu2High{id}(:, ic) = pmd.Dens2{id}(ic) * CalculateMACs(pmd.matDoublet{id,ic}.moleculeStr, 1:smd.eH);
+  end
+end
+
+for it = 1:pmd.nMaterialTriplets
+  for ic = 1:3
+    pmd.name3{it}{ic} = pmd.matTriplet{it,ic}.nameStr;
+    pmd.Dens3{it}(ic) = pmd.matTriplet{it,ic}.density;
+    pmd.Att3{it}(:, ic) =  [...
+      pmd.Dens3{it}(ic) * CalculateMAC(pmd.matTriplet{it,ic}.moleculeStr, pmd.eEL),...
+      pmd.Dens3{it}(ic) * CalculateMAC(pmd.matTriplet{it,ic}.moleculeStr, pmd.eEH)];
+    mu3Low{it}(:, ic)  = pmd.Dens3{it}(ic) * CalculateMACs(pmd.matTriplet{it,ic}.moleculeStr, 1:smd.eL);
+    mu3High{it}(:, ic) = pmd.Dens3{it}(ic) * CalculateMACs(pmd.matTriplet{it,ic}.moleculeStr, 1:smd.eH);
+  end
+end
+
+pmd.muLow = cat(2, mu2Low{:}, mu3Low{:});
+pmd.muHigh = cat(2, mu2High{:}, mu3High{:});
+
+
 %% CT scan geometry and Joseph metod
 % ------------------------------------
 

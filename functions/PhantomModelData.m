@@ -29,6 +29,8 @@ classdef PhantomModelData < handle
     tissue2Set    % {Ni x 1 cell}{Nt2 x 1 cell}[Nr x Nr double] tissue masks for MD2
     densSet       % {Ni x 1 cell}{Nt2 x 1 cell}[Nr x Nr double] calculated mass densities
     Wei2Set       % {Ni x 1 cell}{Nt2 x 1 cell}[Nr x Nr x 2 double] calculated mass fractions
+    nMaterialDoublets % = Nt2, number of material doublets 
+    matDoublet    % {Nt2 x 2 cell} material doublets
     % Three-material decomposition (MD3) data
     p3MD          % boolean, perform MD3?
     name3         % {Nt3 x 1 cell}
@@ -37,6 +39,8 @@ classdef PhantomModelData < handle
     tissue3Set    % {Ni x 1 cell}{Nt3 x 1 cell}[Nr x Nr double] tissue masks for MD3
     Wei3Set       % {Ni x 1 cell}{Nt3 x 1 cell}[Nr x Nr x 3 double] calculated mass fractions
     dens3Set      % {Ni x 1 cell}{Nt3 x 1 cell}[Nr x Nr double] calculated mass densities
+    nMaterialTriplets % = Nt3, number of material triplets 
+    matTriplet    % {Nt3 x 3 cell} material triplets
     % Linear attenuation coefficients for MD2 and MD3
     muLow         % [Ncl x (Nt2+Nt3) double] LACs of doublets and triplets at spectrum energies
     muHigh        % [Nch x (Nt2+Nt3) double] LACs of doublets and triplets at spectrum energies
