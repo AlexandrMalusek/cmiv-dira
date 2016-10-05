@@ -27,7 +27,7 @@ classdef PhantomModelData < handle
     Dens2         % {Nt2 x 1 cell}[1 x 2 double] tabulated mass density
     Att2          % {Nt2 x 1 cell}[2 x 2 double] tabulated LACs
     tissue2Set    % {Ni x 1 cell}{Nt2 x 1 cell}[Nr x Nr double] tissue masks for MD2
-    densSet       % {Ni x 1 cell}
+    densSet       % {Ni x 1 cell}{Nt2 x 1 cell}[Nr x Nr double] calculated mass densities
     Wei2Set       % {Ni x 1 cell}{Nt2 x 1 cell}[Nr x Nr x 2 double] calculated mass fractions
     % Three-material decomposition (MD3) data
     p3MD          % boolean, perform MD3?
@@ -36,6 +36,7 @@ classdef PhantomModelData < handle
     Att3          % {Nt3 x 1 cell}[2 x 3 double] tabulated LACs
     tissue3Set    % {Ni x 1 cell}{Nt3 x 1 cell}[Nr x Nr double] tissue masks for MD3
     Wei3Set       % {Ni x 1 cell}{Nt3 x 1 cell}[Nr x Nr x 3 double] calculated mass fractions
+    dens3Set      % {Ni x 1 cell}{Nt3 x 1 cell}[Nr x Nr double] calculated mass densities
     % Linear attenuation coefficients for MD2 and MD3
     muLow         % [Ncl x (Nt2+Nt3) double] LACs of doublets and triplets at spectrum energies
     muHigh        % [Nch x (Nt2+Nt3) double] LACs of doublets and triplets at spectrum energies
@@ -124,7 +125,7 @@ classdef PhantomModelData < handle
 	axis image; axis off; colorbar('SouthOutside'); title(pmd.name2{i}{1});
 	subplot(1,3,2), imagesc(100 * pmd.Wei2Set{iterIndex}{i}(:, :, 2), [-50 150]);
 	axis image; axis off; colorbar('SouthOutside'); title(pmd.name2{i}{2});
-	subplot(1,3,3), imagesc(pmd.densSet{iterIndex}{1});
+	subplot(1,3,3), imagesc(pmd.densSet{iterIndex}{i});
 	axis image; axis off; colorbar('SouthOutside'); title('density (g/cm^3)');
       end
     end
@@ -188,7 +189,36 @@ classdef PhantomModelData < handle
     function [meanReg, stdReg, covReg] = meanStdCovForMaFrMd3InRois(pmd, centerX,...
       centerY, radius, color, iter, triplet)
       % Mean, standard deviatiation and covariance matrix for MD3 mass
-      % fractions in selected regions.
+      % fractions and density in selected regions.
+	     
+      iterIndex = pmd.GetIterIndex(iter);
+      
+      N0 = size(pmd.recLowSet{iterIndex}, 1);  % image size of pixels
+      r2 = radius.^2;                          % radius squared
+      
+      % Process each region separately
+      for i = 1:length(radius)
+        [ix,iy] = meshgrid(1:N0, 1:N0);
+        R2 = (ix - centerX(i)).^2 + (iy - centerY(i)).^2;
+	clear wa;
+	for j = 1:4
+          if j == 4
+            w = pmd.dens3Set{iterIndex}{triplet}; % mass density
+          else
+            w = pmd.Wei3Set{iterIndex}{triplet}(:,:,j); % mass fraction
+	  end
+	  wa(:,j) = w((R2 < r2(i)) & pmd.tissue3Set{iterIndex}{triplet});
+          meanReg(i, j) = mean(wa(:,j));
+          stdReg(i, j) = std(wa(:,j));
+	end
+	covReg(:,:,i) = cov(wa);
+      end
+    end
+
+    function [meanReg, stdReg, covReg] = meanStdCovForMaFrMd2InRois(pmd, centerX,...
+      centerY, radius, color, iter, doublet)
+      % Mean, standard deviatiation and covariance matrix for MD2 mass
+      % fractions and density in selected regions.
 	     
       iterIndex = pmd.GetIterIndex(iter);
       
@@ -200,8 +230,12 @@ classdef PhantomModelData < handle
         [ix,iy] = meshgrid(1:N0, 1:N0);
         R2 = (ix - centerX(i)).^2 + (iy - centerY(i)).^2;
 	for j = 1:3
-	  w = pmd.Wei3Set{iter+1}{triplet}(:,:,j);
-	  wa(:,j) = w(R2 < r2(i));
+	  if j == 3
+	    w = pmd.densSet{iterIndex}{doublet}(:,:); % mass density
+	  else
+	    w = pmd.Wei2Set{iterIndex}{doublet}(:,:,j); % mass fraction
+	  end
+	  wa(:,j) = w((R2 < r2(i)) & pmd.tissue2Set{iterIndex}{doublet});
           meanReg(i, j) = mean(wa(:,j));
           stdReg(i, j) = std(wa(:,j));
 	end
