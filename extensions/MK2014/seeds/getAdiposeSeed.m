@@ -3,7 +3,7 @@ function [seed]=getAdiposeSeed(adipose)
 % binary regions are first eroded once to remove spurs followed by
 % an erosion to point. 
 %
-% For the picking of the seeds the image is divided to 16 equally sized
+% For the picking of the seeds the image is divided to 'blockSize' sized
 % parts. In each part one seed is taken.
 %
 % Input:  - Binary image showing the adipose tissue

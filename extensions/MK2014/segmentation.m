@@ -1,5 +1,8 @@
-function [bones,adipose,prostate,muscles] = segmentation(image, atlas,...
-   histogramReference, lacThreshold)
+function [bones,adipose,   ...
+          prostate,muscles,...
+          remainingTissues] = segmentation(image, atlas, ...
+                                           histogramReference, ...
+                                           lacThreshold)
 %This is an automated segmentation algorithm.
 %Inputs:
 %     image:               - The image that are to be segmented
@@ -8,9 +11,9 @@ function [bones,adipose,prostate,muscles] = segmentation(image, atlas,...
 %
 %     histogramReference:  - The image used for the histogram matching
 %
-%     lacThreshold:        - LACs below this value are set to zero (to 
-%                            remove air). This value depends on the energy 
-%                            at which the image is reconstructed. 
+%     lacThreshold:        - LACs below this value (in 1/m) are set to zero 
+%                            (to remove air). This value depends on the  
+%                            energy at which the image is reconstructed. 
 %
 % Outputs:
 %     bones:    - The bones of the CT-slice represented by a binary image
@@ -21,7 +24,10 @@ function [bones,adipose,prostate,muscles] = segmentation(image, atlas,...
 %     prostate: - The prostate of the CT-slice represented by a binary 
 %                 image
 %
-%     muslces:  - The muscles of the CT-slice represented by a binary image
+%     muscles:  - The muscles of the CT-slice represented by a binary image
+%
+%     remainingTissues: - The remaining tissues of the CT-slice represented
+%                         by a binary image
 
 disp('Segmentation...');
 
@@ -39,7 +45,7 @@ image(image<lacThreshold) = 0;
 %REMOVE-CT-TABLE-----------------------------------------------------------
 
 %remove CT-table
-imageHistMatch=removeTable(imageHistMatch); 
+[imageHistMatch, bodyMask]=removeTable(imageHistMatch); 
 
 %--------------------------------------------------------------------------
 % THRESHOLDING-------------------------------------------------------------
@@ -172,4 +178,7 @@ order = {'prostate','bone', 'muscles', 'adipose'};
                                               adipose, muscles, ...
                                               prostate,order);  
 
+segmentedTissues =  bones | adipose | muscles | prostate;                                     
+remainingTissues =  bodyMask - segmentedTissues;                                         
+                                          
 end

@@ -1,4 +1,4 @@
-function [imageNoTable]=removeTable(image)
+function [imageNoTable, bodyMask]=removeTable(image)
 % Removes all but the biggest object (the patient) in the image.
 % The area surrounding the patient is set to -100 to increase the contrast 
 % between adispose tissue and air.
@@ -20,6 +20,7 @@ imageLabeledHistogram(1)=0;
 [~, largestArea]=max(imageLabeledHistogram);
 largestArea=largestArea-1;
 imageLabled(imageLabled~=largestArea)=0;
+bodyMask = imageLabled;
 
 imageNoTable = logical(imageLabled).*double(image);
 

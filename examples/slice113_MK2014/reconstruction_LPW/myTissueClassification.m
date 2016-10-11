@@ -12,12 +12,12 @@ function [tissue2, tissue3] = myTissueClassification(iter, smd, pmd)
   % tissue3:  masks defining tissues decomposed using MD2
 
   image = pmd.recLowSet{iter+1};
-  [bones, adipose, prostate, muscles] =...
+  [bones, adipose, prostate, muscles, remainingTissues] =...
     segmentation(image, pmd.atlasImage, pmd.referenceImage, 10.0);
 
   tissue2{1} = bones;
-  tissue3{1} = adipose | prostate | muscles;
-  tissue3{1} = imfill(tissue3{1}, 'holes') - tissue2{1};
+  tissue3{1} = adipose | prostate | muscles | remainingTissues;
 
-  pmd.segments{iter+1} = bones + 2*adipose + 4*prostate + 16*muscles;
+  pmd.segments{iter+1} = bones + 2*adipose + 4*prostate + 16*muscles + ...
+                         32*remainingTissues;
 end
