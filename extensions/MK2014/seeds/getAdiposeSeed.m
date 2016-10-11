@@ -11,6 +11,7 @@ function [seed]=getAdiposeSeed(adipose)
 % Output: - The output is a 2 x N vector with the y and x coordinate of the 
 %           seed points, where N is the number of found seed points.
 
+blockSize = 128;
 
 se = strel('disk',3);
 adipose=imerode(adipose,se);
@@ -18,23 +19,23 @@ potentialSeeds=bwulterode(adipose, 4);  %erode image
 
 noSeeds = bwmorph(potentialSeeds,'clean'); %remove single pixels
 
+imSize = size(adipose);
+numberBlocks = ceil(imSize/blockSize);
 
 seed = [];
-for kx = 1:4
-    for ky = 1:4
-        intx = (1+128*(kx-1)):(128*kx);
-        inty = (1+128*(ky-1)):(128*ky);
+for kx = 1:numberBlocks(2)
+    for ky = 1:numberBlocks(1)
+        intx = (1+blockSize*(kx-1)):min((blockSize*kx),imSize(2));
+        inty = (1+blockSize*(ky-1)):min((blockSize*ky),imSize(1));
         
         potSeeds = potentialSeeds(inty,intx);
         noSeed = noSeeds(inty,intx);
         
         %check if there are single pixels
         if(max(max(potSeeds~=noSeed)))
-            diff=potSeeds - noSeed;%save single pixels
+            diff=potSeeds - noSeed; %save single pixels
         else
-            %[row,col]=find(potSeeds);%save all remaining pixels
-            diff = potSeeds; %zeros(size(adipose(inty,intx)));
-            %diff(row(1),col(1))=1;
+            diff = potSeeds; 
         end
         
         

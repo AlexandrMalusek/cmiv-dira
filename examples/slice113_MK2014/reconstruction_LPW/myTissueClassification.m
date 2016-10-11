@@ -13,7 +13,7 @@ function [tissue2, tissue3] = myTissueClassification(iter, smd, pmd)
 
   image = pmd.recLowSet{iter+1};
   [bones, adipose, prostate, muscles] =...
-    segmentation(image, pmd.atlasImage, pmd.referenceImage);
+    segmentation(image, pmd.atlasImage, pmd.referenceImage, 10.0);
 
   tissue2{1} = bones;
   tissue3{1} = adipose | prostate | muscles;

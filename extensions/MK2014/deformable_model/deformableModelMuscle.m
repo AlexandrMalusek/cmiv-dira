@@ -10,6 +10,7 @@ function [deformed_mask]=deformableModelMuscle(image, mask)
 % EXAMPLE:  deformed_guess = deformableModelMuscle(image, initial_mask);
 % 
 
+image(image < 0) = 0;
 deformed_mask = activecontour(image,mask,300,'Chan-Vese',7);
 
 end
