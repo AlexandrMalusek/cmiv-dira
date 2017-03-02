@@ -32,11 +32,11 @@ for id = 1:pmd.nMaterialDoublets
     pmd.name2{id}{ic} = pmd.matDoublet{id,ic}.nameStr;
     pmd.Dens2{id}(ic) = pmd.matDoublet{id,ic}.density;
     Cross2{id}(:, ic) = [...
-      CalculateMAC(pmd.matDoublet{id,ic}.moleculeStr, pmd.eEL),...
-      CalculateMAC(pmd.matDoublet{id,ic}.moleculeStr, pmd.eEH)];
+      CalculateMAC(pmd.matDoublet{id,ic}.compositionStr, pmd.eEL),...
+      CalculateMAC(pmd.matDoublet{id,ic}.compositionStr, pmd.eEH)];
     pmd.Att2{id}(:, ic) = pmd.Dens2{id}(ic) * Cross2{id}(:, ic);
-    mu2Low{id}(:, ic)  = pmd.Dens2{id}(ic) * CalculateMACs(pmd.matDoublet{id,ic}.moleculeStr, 1:smd.eL);
-    mu2High{id}(:, ic) = pmd.Dens2{id}(ic) * CalculateMACs(pmd.matDoublet{id,ic}.moleculeStr, 1:smd.eH);
+    mu2Low{id}(:, ic)  = pmd.Dens2{id}(ic) * CalculateMACs(pmd.matDoublet{id,ic}.compositionStr, 1:smd.eL);
+    mu2High{id}(:, ic) = pmd.Dens2{id}(ic) * CalculateMACs(pmd.matDoublet{id,ic}.compositionStr, 1:smd.eH);
   end
 end
 
@@ -45,10 +45,10 @@ for it = 1:pmd.nMaterialTriplets
     pmd.name3{it}{ic} = pmd.matTriplet{it,ic}.nameStr;
     pmd.Dens3{it}(ic) = pmd.matTriplet{it,ic}.density;
     pmd.Att3{it}(:, ic) =  [...
-      pmd.Dens3{it}(ic) * CalculateMAC(pmd.matTriplet{it,ic}.moleculeStr, pmd.eEL),...
-      pmd.Dens3{it}(ic) * CalculateMAC(pmd.matTriplet{it,ic}.moleculeStr, pmd.eEH)];
-    mu3Low{it}(:, ic)  = pmd.Dens3{it}(ic) * CalculateMACs(pmd.matTriplet{it,ic}.moleculeStr, 1:smd.eL);
-    mu3High{it}(:, ic) = pmd.Dens3{it}(ic) * CalculateMACs(pmd.matTriplet{it,ic}.moleculeStr, 1:smd.eH);
+      pmd.Dens3{it}(ic) * CalculateMAC(pmd.matTriplet{it,ic}.compositionStr, pmd.eEL),...
+      pmd.Dens3{it}(ic) * CalculateMAC(pmd.matTriplet{it,ic}.compositionStr, pmd.eEH)];
+    mu3Low{it}(:, ic)  = pmd.Dens3{it}(ic) * CalculateMACs(pmd.matTriplet{it,ic}.compositionStr, 1:smd.eL);
+    mu3High{it}(:, ic) = pmd.Dens3{it}(ic) * CalculateMACs(pmd.matTriplet{it,ic}.compositionStr, 1:smd.eH);
   end
 end
 
