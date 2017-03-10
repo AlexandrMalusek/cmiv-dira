@@ -10,6 +10,7 @@ classdef Material < handle
     density         % mass density in g/cm^3
     Ar              % [Ne x 1 double] vector of relative atomic masses
     W               % [Ne x 1 double] vector of elemental mass fractions
+    chemSymbol      % [1 x Ne cell] cell array of chemical symbols
   end
 
   methods
@@ -47,7 +48,7 @@ classdef Material < handle
     end
     matObj.Ar = zeros(103, 1);
     matObj.W = zeros(103, 1);
-    
+
     % Set mass fractions W and relative atomic masses Ar
     switch matObj.compositionType
       case 'atFr'
@@ -55,6 +56,18 @@ classdef Material < handle
       case 'maFr'
         setMaFrFromMaFr(matObj, compositionStr);  
     end
+
+    matObj.chemSymbol = {...
+     'H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Na', 'Mg',...
+     'Al', 'Si', 'P', 'S', 'Cl', 'Ar', 'K', 'Ca', 'Sc', 'Ti', 'V',...
+     'Cr', 'Mn', 'Fe', 'Co', 'Ni', 'Cu', 'Zn', 'Ga', 'Ge', 'As', 'Se',...
+     'Br', 'Kr', 'Rb', 'Sr', 'Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh',...
+     'Pd', 'Ag', 'Cd', 'In', 'Sn', 'Sb', 'Te', 'I', 'Xe', 'Cs', 'Ba',...
+     'La', 'Ce', 'Pr', 'Nd', 'Pm', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho',...
+     'Er', 'Tm', 'Yb', 'Lu', 'Hf', 'Ta', 'W', 'Re', 'Os', 'Ir', 'Pt',...
+     'Au', 'Hg', 'Tl', 'Pb', 'Bi', 'Po', 'At', 'Rn', 'Fr', 'Ra', 'Ac',...
+     'Th', 'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm', 'Bk', 'Cf', 'Es', 'Fm',...
+     'Md', 'No', 'Lr'};
   end
   
   function setMaFrFromAtFr(matObj, atFrStr)
