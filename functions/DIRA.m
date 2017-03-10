@@ -205,15 +205,24 @@ for iter = 1:numbIter
     end
   end
 
+  % Calculate volume fractions v_i (Vol2) from mass fractions w_i (Wei2):
+  %   v_i(x,y) = w_i(x,y) * rho(x,y) / rho_i
+  %   where rho(x,y) is determined from 2MD
+  for id = 1:nTissueDoublets  % id = doublet index
+    for ic = 1:2
+      Vol2{id}(:,:,ic) = Wei2{id}(:, :, ic).*dens{id} / pmd.Dens2{id}(ic);
+    end
+  end
+
   disp('Calculating line integrals...')
   
   if pmd.p2MD
-    % l_i is the line integral of mass fraction multiplied with the density of ith component,
-    % l_i = \int w_i(x,y)*rho_i(x,y) ds
+    % l_i is the line integral of volume fraction of ith component, 
+    % l_i = \int v_i(x,y) ds
     p2 = cell(nTissueDoublets, 1);
     for id = 1:nTissueDoublets  % id = doublet index
       for ic = 1:2  % ic = doublet component index
-        porig2 = sinogramJ(Wei2{id}(:, :, ic).*dens{id}, degVec, r2Vec, smd.interpolation)';
+        porig2 = sinogramJ(Vol2{id}(:,:,ic), degVec, r2Vec, smd.interpolation)';
         X = size(porig2, 2);
         p2{id}(:, :, ic) = porig2(:,1+(X-Nr2)/2:X-(X-Nr2)/2)';
         p2{id}(:, :, ic) = pixsiz * p2{id}(:, :, ic);
@@ -245,8 +254,8 @@ for iter = 1:numbIter
     p2High = cell(nTissueDoublets, 1);
     for id = 1:nTissueDoublets  % id = doublet index
       for ic = 1:2  % ic = doublet component index
-        p2Low{id}(:, :, ic)  = p2{id}(:, :, ic) * Cross2{id}(1, ic) * 100;
-        p2High{id}(:, :, ic) = p2{id}(:, :, ic) * Cross2{id}(2, ic) * 100;
+        p2Low{id}(:, :, ic)  = p2{id}(:, :, ic) * pmd.Att2{id}(1, ic) * 100;
+        p2High{id}(:, :, ic) = p2{id}(:, :, ic) * pmd.Att2{id}(2, ic) * 100;
       end
     end
   end
