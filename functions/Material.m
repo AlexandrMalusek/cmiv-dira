@@ -104,6 +104,7 @@ classdef Material < handle
     % Add spaces arround chemical symbols
     s1 = regexprep(s1,'([a-zA-Z])(\d)','$1 $2'); % between letter - number
     s1 = regexprep(s1,'(\d)([a-zA-Z])','$1 $2'); % between number - letter
+    s1 = regexprep(s1,'([a-zA-Z])(-)','$1 $2'); % between letter - minus sign (a negative fraction)
     
     % Add '-' in front of single letter chemical symbols
     s1 = regexprep(s1,'[ ]([a-zA-Z])[ ]',' -$1 '); % between spaces
@@ -155,6 +156,26 @@ classdef Material < handle
   % lac       LAC in 1/cm
 
   lac = matObj.density * matObj.computeMac(energy);
+  end
+
+  function meac = computeMeac(matObj, energy)
+  % Compute mass energy absorption coefficients (MEACs) at specified energies
+  %
+  % energy    number or a vector with photon energies in keV
+  % mac       MEAC in cm^2/g
+
+  persistent meacTab;
+
+  if isempty(meacTab)
+    meacTab =  dlmread('data_meacTable.txt');
+  end
+
+  % Calculate MEAC vector for the material
+  meacVec = meacTab(:,2:end) * matObj.W(1:38);  % FIX the table and dimensions!!!!
+
+  % Calculate MEAC at specified energies
+  % Linear interpolation in log-log coordinates, MeV -> keV
+  meac = exp(interp1(log(1000*meacTab(:,1)), log(meacVec), log(energy)));
   end
 
   end % methods
