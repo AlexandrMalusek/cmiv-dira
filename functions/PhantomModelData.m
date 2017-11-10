@@ -409,7 +409,153 @@ classdef PhantomModelData < handle
       axis image; axis off; colorbar('SouthOutside');
       title(sprintf('log10(cond(A)), i=%d', iter));
     end
+   
+    function meac = ComputeMeacMap(pmd, energy, iter, indVecDoublets, indVecTriplets)
+      % Return the matrix (map) of mass energy absorption coefficients (MEAC)
+      % in cm^2/g at a photon energy. The value is calculated as a sum of
+      % contributions from all doublets and triplets. Some multiplets may
+      % contain noisy data, for instance the one describing air outside the
+      % patient. These can be eliminated by omitting the corresponding index
+      % from the indVecDoublets or indVecTriplets vectors.
+      %
+      % energy:         photon energy in keV
+      % iter:           iteration number (0, ..., Ni)
+      % indVecDoublets: vector of doublet indices. If 0 then skip contributions from doublets.
+      % indVecTriplets: vector of triplet indices. If 0 then skip contributions from triplets.
+      %
+      % Example:
+      % meac = pmd.ComputeMeacMap(30.0, 8, 2:3, 1);
+ 
+      [nx, ny] = size(pmd.recLowSet{1}); % Get dimensions of the matrix 
+      meac = zeros(nx, ny);
 
+      % Contribution from the doublets
+      if (indVecDoublets(1) ~= 0)
+        for id = indVecDoublets
+          for ic = 1:2
+            meac = meac + pmd.matDoublet{id,ic}.computeMeac(energy) * ...
+                          pmd.Wei2Set{iter+1}{id}(:,:,ic);
+          end
+        end
+      end
+
+      % Contribution from the triplets
+      if (indVecTriplets(1) ~= 0)
+        for it = indVecTriplets
+          for ic = 1:3
+            meac = meac + pmd.matTriplet{it,ic}.computeMeac(energy) * ...
+                          pmd.Wei3Set{iter+1}{it}(:,:,ic);
+          end 
+        end
+      end
+    end
+
+    function mac = ComputeMacMap(pmd, energy, iter, indVecDoublets, indVecTriplets)
+      % Return the matrix (map) of mass attenuation coefficients (MAC) in
+      % cm^2/g at a photon energy. The value is calculated as a sum of
+      % contributions from all doublets and triplets. Some multiplets may
+      % contain noisy data, for instance the one describing air outside the
+      % patient. These can be eliminated by omitting the corresponding index
+      % from the indVecDoublets or indVecTriplets vectors.
+      %
+      % energy:         photon energy in keV
+      % iter:           iteration number (0, ..., Ni)
+      % indVecDoublets: vector of doublet indices. If 0 then skip contributions from doublets.
+      % indVecTriplets: vector of triplet indices. If 0 then skip contributions from triplets.
+      %
+      % Example:
+      % mac = pmd.ComputeMacMap(30.0, 8, 2:3, 1);
+ 
+      [nx, ny] = size(pmd.recLowSet{1}); % Get dimensions of the matrix 
+      mac = zeros(nx, ny);
+
+      % Contribution from the doublets
+      if (indVecDoublets(1) ~= 0)
+        for id = indVecDoublets
+          for ic = 1:2
+            mac = mac + pmd.matDoublet{id,ic}.computeMac(energy) * ...
+                        pmd.Wei2Set{iter+1}{id}(:,:,ic);
+          end
+        end
+      end
+
+      % Contribution from the triplets
+      if (indVecTriplets(1) ~= 0)
+        for it = indVecTriplets
+          for ic = 1:3
+            mac = mac + pmd.matTriplet{it,ic}.computeMac(energy) * ...
+                        pmd.Wei3Set{iter+1}{it}(:,:,ic);
+          end 
+        end
+      end
+    end
+
+    function lac = ComputeLacMap(pmd, energy, iter, indVecDoublets, indVecTriplets)
+      % Return the matrix (map) of linear attenuation coefficients (MAC) in 1/m
+      % at a photon energy. The value is calculated from MACs, see ComputeMacMap
+      %
+      % energy:         photon energy in keV
+      % iter:           iteration number (0, ..., Ni)
+      % indVecDoublets: vector of doublet indices. If 0 then skip contributions from doublets.
+      % indVecTriplets: vector of triplet indices. If 0 then skip contributions from triplets.
+      %
+      % Example:
+      % lac = pmd.ComputeLacMap(30.0, 8, 2:3, 1);
+    
+
+      [nx, ny] = size(pmd.recLowSet{1}); % Get dimensions of the matrix 
+      lac = zeros(nx, ny);
+
+      % Contribution from the doublets
+      if (indVecDoublets(1) ~= 0)
+        for id = indVecDoublets
+          mac = zeros(nx, ny);
+          for ic = 1:2
+            mac = mac + pmd.matDoublet{id,ic}.computeMac(energy) * ...
+                        pmd.Wei2Set{iter+1}{id}(:,:,ic);
+          end
+          lac = lac + mac .* pmd.densSet{iter+1}{id}(:,:);
+        end
+      end
+
+      % Contribution from the triplets
+      if (indVecTriplets(1) ~= 0)
+        for it = indVecTriplets
+          mac = zeros(nx, ny);
+          for ic = 1:3
+            mac = mac + pmd.matTriplet{it,ic}.computeMac(energy) * ...
+                        pmd.Wei3Set{iter+1}{it}(:,:,ic);
+          end
+          lac = lac + mac .* pmd.dens3Set{iter+1}{it}(:,:);
+        end
+      end
+    end
+
+    function maFr = ComputeElemMasFraMap(pmd, Z, iter, indVecDoublets, indVecTriplets)
+      [nx, ny] = size(pmd.recLowSet{1}); % Get dimensions of the matrix 
+      maFr = zeros(nx, ny);
+
+      % Contribution from the doublets
+      if (indVecDoublets(1) ~= 0)
+        for id = indVecDoublets
+          for ic = 1:2
+            maFr = maFr + pmd.matDoublet{id,ic}.computeElemMasFra(Z) * ...
+                          pmd.Wei2Set{iter+1}{id}(:,:,ic);
+          end
+        end
+      end
+
+      % Contribution from the triplets
+      if (indVecTriplets(1) ~= 0)
+        for it = indVecTriplets
+          for ic = 1:3
+            maFr = maFr + pmd.matTriplet{it,ic}.computeElemMasFra(Z) * ...
+                          pmd.Wei3Set{iter+1}{it}(:,:,ic);
+          end 
+        end
+      end
+    end
+    
   end % methods
 
 end % classdef
