@@ -94,6 +94,14 @@ classdef Material < handle
   end
   
   function atoms = fractionsFromStr(matObj, compositionStr)
+    % Return a matrix containing fractions
+    %
+    % Examples of correct compositionStr:
+    % 'H2O1': integer fractions
+    % 'H2.0O1.0': floating point fractions
+    % 'H2.0e+01O1.0e+01': floating point fractions in scientific notation
+    % 'H-2.0O-1.0': negative fractions
+
     fId1 = fopen('data_Ar.txt', 'r');
     tabAr = fscanf(fId1, '%s %i %f', [4 103])';
     fclose(fId1);
@@ -129,6 +137,10 @@ classdef Material < handle
   %
   % energy    number or a vector with photon energies in keV
   % mac       MAC in cm^2/g
+  %
+  % Examples:
+  % mat = Material('water', 1.0, 'H2O1');
+  % mat.computeMac(30.0); mat.computeMac([20, 50]');
 
   persistent macTab;
 
@@ -171,11 +183,19 @@ classdef Material < handle
   end
 
   % Calculate MEAC vector for the material
-  meacVec = meacTab(:,2:end) * matObj.W(1:38);  % FIX the table and dimensions!!!!
+  meacVec = meacTab(:,2:end) * matObj.W(1:92);
 
   % Calculate MEAC at specified energies
   % Linear interpolation in log-log coordinates, MeV -> keV
   meac = exp(interp1(log(1000*meacTab(:,1)), log(meacVec), log(energy)));
+  end
+
+  function elemMasFra = computeElemMasFra(matObj, Z)
+    % Compute elemental mass fraction of an element with the atomic number Z 
+    %
+    % Z:  atomic number
+
+    elemMasFra = matObj.W(Z);
   end
 
   end % methods
