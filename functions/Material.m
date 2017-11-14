@@ -198,5 +198,30 @@ classdef Material < handle
     elemMasFra = matObj.W(Z);
   end
 
+  function elemMassFra = computeElemMassFraVec(matObj)
+    % Compute elemental mass fractions for the material. Sum of the fractions equals 1.
+
+    elemMassFra = matObj.W;
+  end
+
+  function elemAtomFra = computeElemAtomFraVec(matObj)
+    % Compute elemental atomic fractions for the metrial. Sum of the fractions equals 1.
+    
+    elemAtomFra = zeros(103,1);
+    sel = matObj.W ~= 0; % indices for nonzero mass fractions
+    elemAtomFra(sel) = matObj.W(sel) ./ matObj.Ar(sel);
+    elemAtomFra = elemAtomFra / (sum(elemAtomFra)); % Normalize
+  end
+
+  function elemElecFra = computeElemElecFraVec(matObj)
+    % Compute elemental electronic fractions for the metrial. Sum of the fractions equals 1.
+
+    elemElecFra = zeros(103,1);
+    sel = matObj.W ~= 0; % indices for nonzero mass fractions
+    Z = (1:103)';  % column vector with atomic numbers
+    elemElecFra(sel) = matObj.W(sel) .* Z(sel) ./ matObj.Ar(sel);
+    elemElecFra = elemElecFra / (sum(elemElecFra)); % Normalize
+  end
+
   end % methods
 end % classdef

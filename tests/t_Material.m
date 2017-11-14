@@ -102,3 +102,39 @@ if (sum(abs(t_meac - meac) < 0.001) == 2)
 else
   disp('010: failed');
 end
+
+% 011 Test computeElemMassFraVec(matObj)
+mat = Material('water', 1.0, 'H2O1');
+elemMassFra = mat.computeElemMassFraVec();
+t_elemMassFra = zeros(103,1);
+t_elemMassFra(1) = 0.111898344072365;
+t_elemMassFra(8) = 0.888101655927635;
+if (sum(abs(elemMassFra - t_elemMassFra) < geps) == 103)
+  disp('011: OK');
+else
+  disp('011: failed');
+end
+
+% 012 Test computeAtomMassFraVec(matObj)
+mat = Material('water', 1.0, 'H2O1');
+elemAtomFra = mat.computeElemAtomFraVec();
+t_elemAtomFra = zeros(103,1);
+t_elemAtomFra(1) = 0.666666666666667;
+t_elemAtomFra(8) = 0.333333333333333;
+if (sum(abs(elemAtomFra - t_elemAtomFra) < geps) == 103)
+  disp('012: OK');
+else
+  disp('012: failed');
+end
+
+% 013 Test computeElecMassFraVec(matObj)
+mat = Material('water', 1.0, 'H2O1');
+elemElecFra = mat.computeElemElecFraVec();
+t_elemElecFra = zeros(103,1);
+t_elemElecFra(1) = 0.2;
+t_elemElecFra(8) = 0.8;
+if (sum(abs(elemElecFra - t_elemElecFra) < geps) == 103)
+  disp('013: OK');
+else
+  disp('013: failed');
+end
