@@ -170,6 +170,18 @@ classdef Material < handle
   lac = matObj.density * matObj.computeMac(energy);
   end
 
+  function ctn = computeCtn(matObj, energy)
+  % Compute CT number (Hounsfield value) at specified energies
+  %
+  % energy    number or a vector with photon energies in keV
+  % ctn       CTn in HU
+
+  matWater = Material('water', 1.0, 'H2O1', 'atFr');
+  lacWater = matWater.computeLac(energy);        
+  lac = matObj.density * matObj.computeMac(energy);
+  ctn = 1000 * (lac ./ lacWater - 1.0);
+  end
+
   function meac = computeMeac(matObj, energy)
   % Compute mass energy absorption coefficients (MEACs) at specified energies
   %

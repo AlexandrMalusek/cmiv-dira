@@ -531,6 +531,25 @@ classdef PhantomModelData < handle
       end
     end
 
+    function ctn = ComputeCtnMap(pmd, energy, iter, indVecDoublets, indVecTriplets)
+      % Return the matrix (map) of CT numbers in HU
+      % at a photon energy. The value is calculated from LAC, see ComputeLacMap
+      %
+      % energy:         photon energy in keV
+      % iter:           iteration number (0, ..., Ni)
+      % indVecDoublets: vector of doublet indices. If 0 then skip contributions from doublets.
+      % indVecTriplets: vector of triplet indices. If 0 then skip contributions from triplets.
+      %
+      % Example:
+      % ctn = pmd.ComputeCtnMap(30.0, 8, 2:3, 1);
+
+      matWater = Material('water', 1.0, 'H2O1', 'atFr');
+      lacWater = matWater.computeLac(energy);
+
+      lac = pmd.ComputeLacMap(energy, iter, indVecDoublets, indVecTriplets);
+      ctn = (lac / lacWater - 1.0) * 1000;
+    end
+
     function maFr = ComputeElemMasFraMap(pmd, Z, iter, indVecDoublets, indVecTriplets)
       [nx, ny] = size(pmd.recLowSet{1}); % Get dimensions of the matrix 
       maFr = zeros(nx, ny);
@@ -555,7 +574,24 @@ classdef PhantomModelData < handle
         end
       end
     end
-    
+   
+    function [meanReg, stdReg] = meanStdForMapInRois(pmd, map, centerX, centerY, radius)
+      % Mean and standard deviation for a map in selected regions of interest.
+
+      N0 = size(map, 1);  % image size of pixels
+      r2 = radius.^2;     % radius squared
+
+      % Process each region separately
+      for i = 1:length(radius)
+        [ix,iy] = meshgrid(1:N0, 1:N0);
+        R2 = (ix - centerX(i)).^2 + (iy - centerY(i)).^2;
+	% Evaluate regions
+	v = map(R2 < r2(i));
+        meanReg(i) = mean(v);
+        stdReg(i) = std(v);
+      end
+    end
+
   end % methods
 
 end % classdef
