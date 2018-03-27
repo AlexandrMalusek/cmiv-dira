@@ -165,7 +165,7 @@ computePolychromaticProjection(int *ePtr, double ue, double *nPtr, double *pPtr,
         {
             result = 0;
 
-            for(k=1;k<e_Size-1;++k)
+            for(k=0;k<e_Size;++k)
             {
                 /* tmpSum = zeros(size(p(:, :, 1))); % 511x720 */
                 temporarySum = 0;
@@ -179,12 +179,11 @@ computePolychromaticProjection(int *ePtr, double ue, double *nPtr, double *pPtr,
                                      pPtr[y*N + x + l*image_size] ;
                 }
                 
-                /* sl(:, :, k) = (E(k)*N(k))*(E(k+1)-E(k-1)).*exp(tmpSum);    */
-                result += (energy * nPtr[k])*(ePtr[k + 1] - ePtr[k - 1])*
-                           exp(temporarySum);
+                /* sl(:, :, k) = (E(k)*N(k)) .* exp(tmpSum);    */
+                result += (energy * nPtr[k])*exp(temporarySum);
             }
             /* Ap = -log(up/uE);  */
-            apPtr[y*N + x] = -log((result/2)/ue);
+            apPtr[y*N + x] = -log((result)/ue);
         }  
     }    
 }   

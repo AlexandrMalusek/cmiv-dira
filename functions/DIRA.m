@@ -82,18 +82,11 @@ r2Vec  = (-(Nr2-1)/2:1:(Nr2-1)/2);
 [x,y] = meshgrid(r2Vec,r2Vec);
 smd.mask = (x.^2 + y.^2) < ((Nr2-1)/2)^2;
 
-% Compute I0 for both spectra
-% --------------------------
-sp = zeros(1,78);
-for k=2:length(smd.ELow)-1;                           
-  sp(k) = (smd.ELow(k)*smd.NLow(k)*(smd.ELow(k+1)-smd.ELow(k-1)));
-end
-uLow = sum(sp)/2;
-sp = zeros(1,138);
-for k=2:length(smd.EHigh)-1;                           
-  sp(k) = (smd.EHigh(k)*smd.NHigh(k)*(smd.EHigh(k+1)-smd.EHigh(k-1)));
-end
-uHigh = sum(sp)/2;
+% Compute I0 for both spectra.
+% Assume equidistant energy bins of size 1 keV.
+% -----------------------------------------------------------
+uLow = sum(smd.ELow .* smd.NLow);
+uHigh = sum(smd.EHigh .* smd.NHigh);
 
 % Filter original projections, WA filter
 pmd.projLow = rampWindowForMeasuredProjections(pmd.projLow, r2Vec);

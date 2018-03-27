@@ -18,14 +18,14 @@ function [Ap] = computePolyProj(E, uE, N, p, mu)
   
   sl = zeros(sizeP(1), sizeP(2), sizeE(1)-1);
   
-  for k = 2:sizeE-1;
+  for k = 1:sizeE;
     tmpSum = zeros(size(p(:, :, 1)));
     for i = 1:sizeP(3)
       tmpSum = tmpSum+(-mu(E(k), i)*100.*p(:, :, i));
     end
-    sl(:, :, k) = (E(k)*N(k))*(E(k+1)-E(k-1)).*exp(tmpSum);
+    sl(:, :, k) = (E(k)*N(k)).*exp(tmpSum);
   end
-  up = sum(sl, 3)/2;
+  up = sum(sl, 3);
   
   Ap = -log(up/uE);
 end

@@ -105,7 +105,7 @@ mexFunction(int nlhs, mxArray  *plhs[], int nrhs, const mxArray  *prhs[])
 "    double temporarySum = 0;   \n" \
 "    double result = 0;   \n" \
 "   \n" \
-"    for(k = 1; k < e_Size-1; ++k)   \n" \
+"    for(k = 0; k < e_Size; ++k)   \n" \
 "    {   \n" \
 "     temporarySum = 0;   \n" \
 "                  \n" \
@@ -115,10 +115,9 @@ mexFunction(int nlhs, mxArray  *plhs[], int nrhs, const mxArray  *prhs[])
 "                         100*pPtr[l*total_size + t_id];   \n" \
 "      }   \n" \
 "     result += (energyLevels[k] * nPtr[k]) *   \n" \
-"                (energyLevels[k+1] - energyLevels[k-1]) *   \n" \
 "              exp(temporarySum);   \n" \
 "    }   \n" \
-"    apPtr[t_id] = -log(result/2/ue);   \n" \
+"    apPtr[t_id] = -log(result/ue);   \n" \
 "}   \n" \
 "\n";
   
