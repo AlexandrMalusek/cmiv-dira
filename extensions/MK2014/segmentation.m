@@ -1,4 +1,8 @@
-function [bones,adipose,prostate,muscles] = segmentation(image,atlas,histogramReference)
+function [bones,adipose,   ...
+          prostate,muscles,...
+          remainingTissues] = segmentation(image, atlas, ...
+                                           histogramReference, ...
+                                           lacThreshold)
 %This is an automated segmentation algorithm.
 %Inputs:
 %     image:               - The image that are to be segmented
@@ -6,6 +10,10 @@ function [bones,adipose,prostate,muscles] = segmentation(image,atlas,histogramRe
 %     atlas:               - The atlas used for the segmentation
 %
 %     histogramReference:  - The image used for the histogram matching
+%
+%     lacThreshold:        - LACs below this value (in 1/m) are set to zero 
+%                            (to remove air). This value depends on the  
+%                            energy at which the image is reconstructed. 
 %
 % Outputs:
 %     bones:    - The bones of the CT-slice represented by a binary image
@@ -16,25 +24,32 @@ function [bones,adipose,prostate,muscles] = segmentation(image,atlas,histogramRe
 %     prostate: - The prostate of the CT-slice represented by a binary 
 %                 image
 %
-%     muslces:  - The muscles of the CT-slice represented by a binary image
+%     muscles:  - The muscles of the CT-slice represented by a binary image
+%
+%     remainingTissues: - The remaining tissues of the CT-slice represented
+%                         by a binary image
 
+disp('Segmentation...');
 
 % Preprocessing of the image
-image(image<500) = 24;
+image(image<lacThreshold) = 0;                                               
+
 
 %--------------------------------------------------------------------------
 %HISTOGRAM-MATCHING--------------------------------------------------------
 
 %match image to reference image
 [imageHistMatch]=histogramMatching(image,histogramReference);
+
 % -------------------------------------------------------------------------
 %REMOVE-CT-TABLE-----------------------------------------------------------
 
 %remove CT-table
-imageHistMatch=removeTable(imageHistMatch); 
+[imageHistMatch, bodyMask]=removeTable(imageHistMatch); 
 
 %--------------------------------------------------------------------------
-%THRESHOLDING--------------------------------------------------------------
+% THRESHOLDING-------------------------------------------------------------
+
 %thresholding & labeling
 [bonesThreshold, bonesThresholdFilled,adiposeCleaning]...
     =automatedThresholding(imageHistMatch);
@@ -47,6 +62,7 @@ imageHistMatch=removeTable(imageHistMatch);
 
 %get adipose tissue seed
 [adiposeSeed]=getAdiposeSeed(adiposeCleaning);
+
 
 %--------------------------------------------------------------------------
 % REGION-GROWING-----------------------------------------------------------
@@ -68,7 +84,7 @@ adiposeRegionGrowingFilled=imclose(adiposeRegionGrowingFilled,se);
 adiposeRegionGrowingFilled=fillSmallHoles(adiposeRegionGrowingFilled,1000);
 adipose=adiposeRegionGrowingFilled;
 
-%% region growing on bones
+% region growing on bones
 bonesRegionGrowing=zeros(size(imageHistMatch));
 bonesTemp = cell(size(boneSeeds,1),1);
 
@@ -81,13 +97,13 @@ bonesRegionGrowingFilled=imfill(bonesRegionGrowing,'holes');
 
 
 % -------------------------------------------------------------------------
-%COMBINE TH & RG-----------------------------------------------------------
+% COMBINE TH & RG----------------------------------------------------------
 
 %bones
 bonesAll=bonesRegionGrowingFilled | bonesThresholdFilled;
 
 %--------------------------------------------------------------------------
-%CLOSE HOLES---------------------------------------------------------------
+% CLOSE HOLES--------------------------------------------------------------
 
 %closing region growing || thresholding segmentation for bones
 bonesSkeleton = bwmorph(bonesAll,'skel',Inf);
@@ -98,7 +114,7 @@ bones=imfill(bones,'holes');
 
 
 % -------------------------------------------------------------------------
-%ATLAS-BASED-IMAGE-REGISTRATION--------------------------------------------
+% ATLAS-BASED-IMAGE-REGISTRATION-------------------------------------------
 
 % Ensure that the atlas is an gray scale image  
 if size(atlas,3) == 3
@@ -143,10 +159,26 @@ muscleRight=atlasMusclesLabeled;
 muscleRight(muscleRight~=2)=0;
 muscleRight(muscleRight==2)=1;
 
-muscleLeftFinal=deformableModelMuscle(imageHistMatch.*((double(bones)*(-1))+1), muscleLeft);
-muscleRightFinal=deformableModelMuscle(imageHistMatch.*double((double(bones)*(-1))+1), muscleRight);
+muscleLeftFinal=deformableModelMuscle(imageHistMatch.* ...
+                                    ((double(bones)*(-1))+1), muscleLeft);
+                                
+muscleRightFinal=deformableModelMuscle(imageHistMatch.* ...
+                              double((double(bones)*(-1))+1), muscleRight);
 
-muscles=muscleLeftFinal+muscleRightFinal;
+muscles=logical(muscleLeftFinal+muscleRightFinal);
 
+% -------------------------------------------------------------------------
+% RESOLVE TISSUE CONFLICTS-------------------------------------------------
 
+order = {'prostate','bone', 'muscles', 'adipose'};
+
+[bones, ...
+ adipose,...
+ muscles,prostate]  =  resolveTissueConflicts(bones,...
+                                              adipose, muscles, ...
+                                              prostate,order);  
+
+segmentedTissues =  bones | adipose | muscles | prostate;                                     
+remainingTissues =  bodyMask - segmentedTissues;                                         
+                                          
 end

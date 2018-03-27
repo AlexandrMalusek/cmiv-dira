@@ -29,6 +29,8 @@ classdef PhantomModelData < handle
     tissue2Set    % {Ni x 1 cell}{Nt2 x 1 cell}[Nr x Nr double] tissue masks for MD2
     densSet       % {Ni x 1 cell}{Nt2 x 1 cell}[Nr x Nr double] calculated mass densities
     Wei2Set       % {Ni x 1 cell}{Nt2 x 1 cell}[Nr x Nr x 2 double] calculated mass fractions
+    nMaterialDoublets % = Nt2, number of material doublets 
+    matDoublet    % {Nt2 x 2 cell} material doublets
     % Three-material decomposition (MD3) data
     p3MD          % boolean, perform MD3?
     name3         % {Nt3 x 1 cell}
@@ -37,6 +39,8 @@ classdef PhantomModelData < handle
     tissue3Set    % {Ni x 1 cell}{Nt3 x 1 cell}[Nr x Nr double] tissue masks for MD3
     Wei3Set       % {Ni x 1 cell}{Nt3 x 1 cell}[Nr x Nr x 3 double] calculated mass fractions
     dens3Set      % {Ni x 1 cell}{Nt3 x 1 cell}[Nr x Nr double] calculated mass densities
+    nMaterialTriplets % = Nt3, number of material triplets 
+    matTriplet    % {Nt3 x 3 cell} material triplets
     % Linear attenuation coefficients for MD2 and MD3
     muLow         % [Ncl x (Nt2+Nt3) double] LACs of doublets and triplets at spectrum energies
     muHigh        % [Nch x (Nt2+Nt3) double] LACs of doublets and triplets at spectrum energies
@@ -404,6 +408,188 @@ classdef PhantomModelData < handle
       imagesc(log10(cnMat));
       axis image; axis off; colorbar('SouthOutside');
       title(sprintf('log10(cond(A)), i=%d', iter));
+    end
+   
+    function meac = ComputeMeacMap(pmd, energy, iter, indVecDoublets, indVecTriplets)
+      % Return the matrix (map) of mass energy absorption coefficients (MEAC)
+      % in cm^2/g at a photon energy. The value is calculated as a sum of
+      % contributions from all doublets and triplets. Some multiplets may
+      % contain noisy data, for instance the one describing air outside the
+      % patient. These can be eliminated by omitting the corresponding index
+      % from the indVecDoublets or indVecTriplets vectors.
+      %
+      % energy:         photon energy in keV
+      % iter:           iteration number (0, ..., Ni)
+      % indVecDoublets: vector of doublet indices. If 0 then skip contributions from doublets.
+      % indVecTriplets: vector of triplet indices. If 0 then skip contributions from triplets.
+      %
+      % Example:
+      % meac = pmd.ComputeMeacMap(30.0, 8, 2:3, 1);
+ 
+      [nx, ny] = size(pmd.recLowSet{1}); % Get dimensions of the matrix 
+      meac = zeros(nx, ny);
+
+      % Contribution from the doublets
+      if (indVecDoublets(1) ~= 0)
+        for id = indVecDoublets
+          for ic = 1:2
+            meac = meac + pmd.matDoublet{id,ic}.computeMeac(energy) * ...
+                          pmd.Wei2Set{iter+1}{id}(:,:,ic);
+          end
+        end
+      end
+
+      % Contribution from the triplets
+      if (indVecTriplets(1) ~= 0)
+        for it = indVecTriplets
+          for ic = 1:3
+            meac = meac + pmd.matTriplet{it,ic}.computeMeac(energy) * ...
+                          pmd.Wei3Set{iter+1}{it}(:,:,ic);
+          end 
+        end
+      end
+    end
+
+    function mac = ComputeMacMap(pmd, energy, iter, indVecDoublets, indVecTriplets)
+      % Return the matrix (map) of mass attenuation coefficients (MAC) in
+      % cm^2/g at a photon energy. The value is calculated as a sum of
+      % contributions from all doublets and triplets. Some multiplets may
+      % contain noisy data, for instance the one describing air outside the
+      % patient. These can be eliminated by omitting the corresponding index
+      % from the indVecDoublets or indVecTriplets vectors.
+      %
+      % energy:         photon energy in keV
+      % iter:           iteration number (0, ..., Ni)
+      % indVecDoublets: vector of doublet indices. If 0 then skip contributions from doublets.
+      % indVecTriplets: vector of triplet indices. If 0 then skip contributions from triplets.
+      %
+      % Example:
+      % mac = pmd.ComputeMacMap(30.0, 8, 2:3, 1);
+ 
+      [nx, ny] = size(pmd.recLowSet{1}); % Get dimensions of the matrix 
+      mac = zeros(nx, ny);
+
+      % Contribution from the doublets
+      if (indVecDoublets(1) ~= 0)
+        for id = indVecDoublets
+          for ic = 1:2
+            mac = mac + pmd.matDoublet{id,ic}.computeMac(energy) * ...
+                        pmd.Wei2Set{iter+1}{id}(:,:,ic);
+          end
+        end
+      end
+
+      % Contribution from the triplets
+      if (indVecTriplets(1) ~= 0)
+        for it = indVecTriplets
+          for ic = 1:3
+            mac = mac + pmd.matTriplet{it,ic}.computeMac(energy) * ...
+                        pmd.Wei3Set{iter+1}{it}(:,:,ic);
+          end 
+        end
+      end
+    end
+
+    function lac = ComputeLacMap(pmd, energy, iter, indVecDoublets, indVecTriplets)
+      % Return the matrix (map) of linear attenuation coefficients (MAC) in 1/m
+      % at a photon energy. The value is calculated from MACs, see ComputeMacMap
+      %
+      % energy:         photon energy in keV
+      % iter:           iteration number (0, ..., Ni)
+      % indVecDoublets: vector of doublet indices. If 0 then skip contributions from doublets.
+      % indVecTriplets: vector of triplet indices. If 0 then skip contributions from triplets.
+      %
+      % Example:
+      % lac = pmd.ComputeLacMap(30.0, 8, 2:3, 1);
+    
+
+      [nx, ny] = size(pmd.recLowSet{1}); % Get dimensions of the matrix 
+      lac = zeros(nx, ny);
+
+      % Contribution from the doublets
+      if (indVecDoublets(1) ~= 0)
+        for id = indVecDoublets
+          mac = zeros(nx, ny);
+          for ic = 1:2
+            mac = mac + pmd.matDoublet{id,ic}.computeMac(energy) * ...
+                        pmd.Wei2Set{iter+1}{id}(:,:,ic);
+          end
+          lac = lac + mac .* pmd.densSet{iter+1}{id}(:,:);
+        end
+      end
+
+      % Contribution from the triplets
+      if (indVecTriplets(1) ~= 0)
+        for it = indVecTriplets
+          mac = zeros(nx, ny);
+          for ic = 1:3
+            mac = mac + pmd.matTriplet{it,ic}.computeMac(energy) * ...
+                        pmd.Wei3Set{iter+1}{it}(:,:,ic);
+          end
+          lac = lac + mac .* pmd.dens3Set{iter+1}{it}(:,:);
+        end
+      end
+    end
+
+    function ctn = ComputeCtnMap(pmd, energy, iter, indVecDoublets, indVecTriplets)
+      % Return the matrix (map) of CT numbers in HU
+      % at a photon energy. The value is calculated from LAC, see ComputeLacMap
+      %
+      % energy:         photon energy in keV
+      % iter:           iteration number (0, ..., Ni)
+      % indVecDoublets: vector of doublet indices. If 0 then skip contributions from doublets.
+      % indVecTriplets: vector of triplet indices. If 0 then skip contributions from triplets.
+      %
+      % Example:
+      % ctn = pmd.ComputeCtnMap(30.0, 8, 2:3, 1);
+
+      matWater = Material('water', 1.0, 'H2O1', 'atFr');
+      lacWater = matWater.computeLac(energy);
+
+      lac = pmd.ComputeLacMap(energy, iter, indVecDoublets, indVecTriplets);
+      ctn = (lac / lacWater - 1.0) * 1000;
+    end
+
+    function maFr = ComputeElemMasFraMap(pmd, Z, iter, indVecDoublets, indVecTriplets)
+      [nx, ny] = size(pmd.recLowSet{1}); % Get dimensions of the matrix 
+      maFr = zeros(nx, ny);
+
+      % Contribution from the doublets
+      if (indVecDoublets(1) ~= 0)
+        for id = indVecDoublets
+          for ic = 1:2
+            maFr = maFr + pmd.matDoublet{id,ic}.computeElemMasFra(Z) * ...
+                          pmd.Wei2Set{iter+1}{id}(:,:,ic);
+          end
+        end
+      end
+
+      % Contribution from the triplets
+      if (indVecTriplets(1) ~= 0)
+        for it = indVecTriplets
+          for ic = 1:3
+            maFr = maFr + pmd.matTriplet{it,ic}.computeElemMasFra(Z) * ...
+                          pmd.Wei3Set{iter+1}{it}(:,:,ic);
+          end 
+        end
+      end
+    end
+   
+    function [meanReg, stdReg] = meanStdForMapInRois(pmd, map, centerX, centerY, radius)
+      % Mean and standard deviation for a map in selected regions of interest.
+
+      N0 = size(map, 1);  % image size of pixels
+      r2 = radius.^2;     % radius squared
+
+      % Process each region separately
+      for i = 1:length(radius)
+        [ix,iy] = meshgrid(1:N0, 1:N0);
+        R2 = (ix - centerX(i)).^2 + (iy - centerY(i)).^2;
+	% Evaluate regions
+	v = map(R2 < r2(i));
+        meanReg(i) = mean(v);
+        stdReg(i) = std(v);
+      end
     end
 
   end % methods

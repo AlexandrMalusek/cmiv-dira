@@ -19,6 +19,47 @@ if (0 == exist('gDiraPlotFigures'))
   gDiraPlotFigures = 1;
 end
 
+% Initialize internal variables used for backward compatibility.
+sizeC = size(pmd.matDoublet);
+pmd.nMaterialDoublets = sizeC(1);
+fprintf('\nNumber of material doublets = %d\n', pmd.nMaterialDoublets);
+sizeC = size(pmd.matTriplet);
+pmd.nMaterialTriplets = sizeC(1);
+fprintf('Number of material triplets = %d\n', pmd.nMaterialTriplets);
+
+mu2Low = {};
+mu2High = {};
+for id = 1:pmd.nMaterialDoublets
+  for ic = 1:2
+    pmd.name2{id}{ic} = pmd.matDoublet{id,ic}.nameStr;
+    pmd.Dens2{id}(ic) = pmd.matDoublet{id,ic}.density;
+    Cross2{id}(:, ic) = [...
+      pmd.matDoublet{id,ic}.computeMac(pmd.eEL),...
+      pmd.matDoublet{id,ic}.computeMac(pmd.eEH)];
+    pmd.Att2{id}(:, ic) = pmd.Dens2{id}(ic) * Cross2{id}(:, ic);
+    mu2Low{id}(:, ic)  = pmd.Dens2{id}(ic) * pmd.matDoublet{id,ic}.computeMac((1:smd.eL)');
+    mu2High{id}(:, ic) = pmd.Dens2{id}(ic) * pmd.matDoublet{id,ic}.computeMac((1:smd.eH)');
+  end
+end
+
+mu3Low = {};
+mu3High = {};
+for it = 1:pmd.nMaterialTriplets
+  for ic = 1:3
+    pmd.name3{it}{ic} = pmd.matTriplet{it,ic}.nameStr;
+    pmd.Dens3{it}(ic) = pmd.matTriplet{it,ic}.density;
+    pmd.Att3{it}(:, ic) =  [...
+      pmd.Dens3{it}(ic) * pmd.matTriplet{it,ic}.computeMac(pmd.eEL),...
+      pmd.Dens3{it}(ic) * pmd.matTriplet{it,ic}.computeMac(pmd.eEH)];
+    mu3Low{it}(:, ic)  = pmd.Dens3{it}(ic) * pmd.matTriplet{it,ic}.computeMac((1:smd.eL)');
+    mu3High{it}(:, ic) = pmd.Dens3{it}(ic) * pmd.matTriplet{it,ic}.computeMac((1:smd.eH)');
+  end
+end
+
+pmd.muLow = cat(2, mu2Low{:}, mu3Low{:});
+pmd.muHigh = cat(2, mu2High{:}, mu3High{:});
+
+
 %% CT scan geometry and Joseph metod
 % ------------------------------------
 
@@ -41,18 +82,11 @@ r2Vec  = (-(Nr2-1)/2:1:(Nr2-1)/2);
 [x,y] = meshgrid(r2Vec,r2Vec);
 smd.mask = (x.^2 + y.^2) < ((Nr2-1)/2)^2;
 
-% Compute I0 for both spectra
-% --------------------------
-sp = zeros(1,78);
-for k=2:length(smd.ELow)-1;                           
-  sp(k) = (smd.ELow(k)*smd.NLow(k)*(smd.ELow(k+1)-smd.ELow(k-1)));
-end
-uLow = sum(sp)/2;
-sp = zeros(1,138);
-for k=2:length(smd.EHigh)-1;                           
-  sp(k) = (smd.EHigh(k)*smd.NHigh(k)*(smd.EHigh(k+1)-smd.EHigh(k-1)));
-end
-uHigh = sum(sp)/2;
+% Compute I0 for both spectra.
+% Assume equidistant energy bins of size 1 keV.
+% -----------------------------------------------------------
+uLow = sum(smd.ELow .* smd.NLow);
+uHigh = sum(smd.EHigh .* smd.NHigh);
 
 % Filter original projections, WA filter
 pmd.projLow = rampWindowForMeasuredProjections(pmd.projLow, r2Vec);
@@ -168,15 +202,24 @@ for iter = 1:numbIter
     end
   end
 
+  % Calculate volume fractions v_i (Vol2) from mass fractions w_i (Wei2):
+  %   v_i(x,y) = w_i(x,y) * rho(x,y) / rho_i
+  %   where rho(x,y) is determined from 2MD
+  for id = 1:nTissueDoublets  % id = doublet index
+    for ic = 1:2
+      Vol2{id}(:,:,ic) = Wei2{id}(:, :, ic).*dens{id} / pmd.Dens2{id}(ic);
+    end
+  end
+
   disp('Calculating line integrals...')
   
   if pmd.p2MD
-    % l_i is the line integral of mass fraction multiplied with the density of ith component,
-    % l_i = \int w_i(x,y)*rho_i(x,y) ds
+    % l_i is the line integral of volume fraction of ith component, 
+    % l_i = \int v_i(x,y) ds
     p2 = cell(nTissueDoublets, 1);
     for id = 1:nTissueDoublets  % id = doublet index
       for ic = 1:2  % ic = doublet component index
-        porig2 = sinogramJ(Wei2{id}(:, :, ic).*dens{id}, degVec, r2Vec, smd.interpolation)';
+        porig2 = sinogramJ(Vol2{id}(:,:,ic), degVec, r2Vec, smd.interpolation)';
         X = size(porig2, 2);
         p2{id}(:, :, ic) = porig2(:,1+(X-Nr2)/2:X-(X-Nr2)/2)';
         p2{id}(:, :, ic) = pixsiz * p2{id}(:, :, ic);
@@ -208,8 +251,8 @@ for iter = 1:numbIter
     p2High = cell(nTissueDoublets, 1);
     for id = 1:nTissueDoublets  % id = doublet index
       for ic = 1:2  % ic = doublet component index
-        p2Low{id}(:, :, ic)  = p2{id}(:, :, ic) * Cross2{id}(1, ic) * 100;
-        p2High{id}(:, :, ic) = p2{id}(:, :, ic) * Cross2{id}(2, ic) * 100;
+        p2Low{id}(:, :, ic)  = p2{id}(:, :, ic) * pmd.Att2{id}(1, ic) * 100;
+        p2High{id}(:, :, ic) = p2{id}(:, :, ic) * pmd.Att2{id}(2, ic) * 100;
       end
     end
   end

@@ -13,7 +13,9 @@ function deformedmask = deformableModelProstate(image, atlas)
 % Output: Binary image containing the prostate. 
 %
 
+image(image < 0) = 0;
 atlas(isnan(atlas))=0;
+
 [~, prostateAtlas]=histc(atlas,[190 210]);
 prostateAtlas=bwareaopen(prostateAtlas, 50, 4);
 
